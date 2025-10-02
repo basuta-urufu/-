@@ -133,42 +133,72 @@ void Game_Update()
     prevAngle = angle;
     prevBouPosition = bouCenter;
     float penetration;
+    static bool wasPressed = false;  // 前フレームのAキー状態
+    bool isPressed = (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_LEFT);
+
+    // デフォルトの角度
+    float defaultAngle = 0.25f;
+    float pressedAngle = 0.25f - 0.5f;
+
+    // 今回の入力で角度を決める
+    if (isPressed) {
+        angle = pressedAngle;
+    }
+    else {
+        angle = defaultAngle;
+    }
+
+    // 「押していたのに離した瞬間」を検知
+    bool pressedNow = (!wasPressed && isPressed);  // 押した瞬間
+    bool releasedNow = (wasPressed && !isPressed);  // 離した瞬間
+
+    wasPressed = isPressed;
     if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
     {
-        // めり込みを解消（最低限の押し戻し）
+        // --- めり込み解消 ---
         ballPosition = ballPosition + normal * penetration;
 
+        // 法線方向の速度成分
         float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
 
-        // 棒が動いているかどうかを判定
-        bool isMoving = (fabs(angularVelocity) > 0.001f) || (fabs(bouVelocity.x) > 0.01f || fabs(bouVelocity.y) > 0.01f);
-
-        if (isMoving && vn < 0) {
-            // 棒が動いているときだけ弾く
-            ballVelocity = ballVelocity - normal * (1.5f * vn);
-
-            // 棒の移動分を加える
-            ballVelocity = ballVelocity + bouVelocity * 0.5f;
-
-            // 回転によるはじき
+        // 「押した瞬間」を特別扱い
+        if (pressedNow && vn < 0)
+        {
+            // --- 強制的に飛ばす ---
             DxPlus::Vec2 tangent = { -normal.y, normal.x };
-            ballVelocity = ballVelocity + tangent * (angularVelocity * 80.0f);
-        }
-        else {
-            // 棒が止まっている場合 → 法線方向速度は反射せず、押し戻しのみ
-            // つまりそのまま転がる
-            if (vn < 0) {
-                // 法線成分だけカット（棒にめり込まないように）
-                ballVelocity = ballVelocity - normal * vn;
+
+            // ヒット位置によって方向をずらす
+            float c = cos(-angle);
+            float s = sin(-angle);
+            DxPlus::Vec2 local;
+            local.x = (ballPosition.x - bouCenter.x) * c - (ballPosition.y - bouCenter.y) * s;
+            local.y = (ballPosition.x - bouCenter.x) * s + (ballPosition.y - bouCenter.y) * c;
+
+            float relativeX = local.x / (bouWidth * 0.5f);
+            relativeX = std::max(-1.0f, std::min(1.0f, relativeX));
+
+            DxPlus::Vec2 hitDir = normal + tangent * relativeX * 0.8f;
+            float len = sqrt(hitDir.x * hitDir.x + hitDir.y * hitDir.y);
+            if (len > 0.0001f) {
+                hitDir.x /= len;
+                hitDir.y /= len;
             }
+
+            // 飛ばす強さ（数値調整可能）
+            ballVelocity = hitDir * 20.0f;
+        }
+        else if (vn < 0)
+        {
+            // 普通に反射／転がし処理
+            ballVelocity = ballVelocity - normal * vn;
         }
     }
 
-    // 入力で角度を変える
-    if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_LEFT)
-        angle  = 0.25f -0.5f;
-    else
-        angle = 0.25f;
+        
+    
+
+    
+   
 }
 
 //----------------------------------------------------------------------
