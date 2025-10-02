@@ -135,32 +135,40 @@ void Game_Update()
     float penetration;
     if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
     {
-        // 押し戻し
+        // めり込みを解消（最低限の押し戻し）
         ballPosition = ballPosition + normal * penetration;
 
-        // 法線方向の速度を消して滑る
         float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
-        ballVelocity = ballVelocity - normal * vn;
 
-        // --- 棒が動いた分を玉に加える ---
-        // ① 棒の平行移動
-        ballVelocity = ballVelocity + bouVelocity * 0.5f; // 係数調整
+        // 棒が動いているかどうかを判定
+        bool isMoving = (fabs(angularVelocity) > 0.001f) || (fabs(bouVelocity.x) > 0.01f || fabs(bouVelocity.y) > 0.01f);
 
-        // ② 棒の角度変化（回転によるはじき）
-        if (fabs(angularVelocity) > 0.001f)
-        {
+        if (isMoving && vn < 0) {
+            // 棒が動いているときだけ弾く
+            ballVelocity = ballVelocity - normal * (1.5f * vn);
+
+            // 棒の移動分を加える
+            ballVelocity = ballVelocity + bouVelocity * 0.5f;
+
+            // 回転によるはじき
             DxPlus::Vec2 tangent = { -normal.y, normal.x };
-            ballVelocity = ballVelocity + tangent * (angularVelocity * 80.0f); // 強さ調整
+            ballVelocity = ballVelocity + tangent * (angularVelocity * 80.0f);
         }
-
-        // 摩擦
-        ballVelocity *= 0.99f;
+        else {
+            // 棒が止まっている場合 → 法線方向速度は反射せず、押し戻しのみ
+            // つまりそのまま転がる
+            if (vn < 0) {
+                // 法線成分だけカット（棒にめり込まないように）
+                ballVelocity = ballVelocity - normal * vn;
+            }
+        }
     }
+
     // 入力で角度を変える
     if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_LEFT)
-        posY = -0.5f;
+        angle  = 0.25f -0.5f;
     else
-        posY = 0;
+        angle = 0.25f;
 }
 
 //----------------------------------------------------------------------
@@ -188,8 +196,8 @@ void Game_Render()
         bouCenter, { bouWidth, bouHeight },
         GetColor(0, 0, 0),
         1.0f,
-        { bouWidth * 0.5f, bouHeight * 0.5f }, // 中心を回転の軸に
-        angle + posY
+        { bouWidth * 0.5f, bouHeight * 0.5f },
+        angle 
     );
 
     // 玉を描画
