@@ -41,19 +41,35 @@ bool CircleOBBCollision(
             localNormal.x /= dist;
             localNormal.y /= dist;
         }
-
         normal.x = localNormal.x * c + localNormal.y * s;
         normal.y = -localNormal.x * s + localNormal.y * c;
         return true;
     }
     return false;
 }
+//----------------------------------------------------------------------
+// 円と障害物の当たり判定
+// ---------------------------------------------------------------------
+bool CheckCollision(DxPlus::Vec2 circle2,float radius, DxPlus::Vec2 ObstaclePosition)
+{
+    constexpr float hitboxsize = 10;
 
+    float dx2 = std::abs(circle2.x - ObstaclePosition.x);
+    float dy2 = std::abs(circle2.y - ObstaclePosition.y);
+
+    return (dx2 < hitboxsize && dy2 < hitboxsize);
+
+}
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
-int pinBall_lafID;
+//障害物
+struct Obstacle {
+    DxPlus::Vec2 Position;
 
+};
+std::vector<Obstacle>Obstacles;
+int pinBall_lafID;//背景
 // 棒
 DxPlus::Vec2 bouCenter = { 500,650 };  // ← 中心座標（ここを動かせば棒全体が動く）
 DxPlus::Vec2 bouCenter2 = { 780,650 };
@@ -62,20 +78,15 @@ float bouHeight = 50.0f;
 float posY = 0.0f;
 float angle= 0.25f; // 入力で角度を変える用
 float angle2 = -0.25f;
-
 // 玉
 float ballRadius = 5.0f;
 float GRAVITY = 0.5f;
 DxPlus::Vec2 ballPosition = { 500,100 };
 DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
-
 // nextScene の extern 宣言
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
-
-
-
 //----------------------------------------------------------------------
 // 初期設定
 //----------------------------------------------------------------------
@@ -83,13 +94,21 @@ void Game_Init()
 {
     DxLib::SetBackgroundColor(0, 128, 255);
     pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
+    Obstacles.clear();
+    Obstacles.push_back({ {400, 400} });
+    Obstacles.push_back({ {600, 300} });
+    Obstacles.push_back({ {700, 500} });
     Game_Reset();
 }
 
 //----------------------------------------------------------------------
 // リセット
 //----------------------------------------------------------------------
-void Game_Reset() { gameState = 0; gameFadeTimer = 1.0f; }
+void Game_Reset() 
+{ 
+    gameState = 0; 
+    gameFadeTimer = 1.0f; 
+}
 
 //----------------------------------------------------------------------
 // 更新処理
@@ -255,6 +274,26 @@ void Game_Update()
             ballVelocity = ballVelocity - normal2 * vn2;
         }
     }
+    for (auto& obs : Obstacles)
+    {
+        if (CheckCollision(ballPosition, ballRadius, obs.Position))
+        {
+            DxPlus::Vec2 dir = ballPosition - obs.Position;
+            float len = sqrt(dir.x * dir.x + dir.y * dir.y);
+            if (len > 0.0001f)
+            {
+                dir.x /= len;
+                dir.y /= len;
+            }
+            ballPosition = obs.Position + dir * (ballRadius+10.0f);
+
+            float vn = ballVelocity.x * dir.x + ballVelocity.y * dir.y;
+            if (vn < 0)
+            {
+                ballVelocity = ballVelocity - dir * (2 * vn);
+            }
+        }
+    }
         
     
 
@@ -297,7 +336,10 @@ void Game_Render()
         { bouWidth * 0.5f,bouHeight * 0.5f },
         angle2
     );
-
+    for (auto& obs : Obstacles)
+    {
+        DxPlus::Primitive2D::DrawCircle(obs.Position, 10, GetColor(255, 0, 0));
+    }
     // 玉を描画
     DxPlus::Primitive2D::DrawCircle(ballPosition, 10, GetColor(0, 0, 0));
 }
@@ -308,3 +350,5 @@ void Game_Render()
 void Game_End()
 {
 }
+
+
