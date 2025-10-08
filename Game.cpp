@@ -48,36 +48,40 @@ bool CircleOBBCollision(
     return false;
 }
 //----------------------------------------------------------------------
-// 円と障害物の当たり判定
-// ---------------------------------------------------------------------
-bool CheckCollision(DxPlus::Vec2 circle2,float radius, DxPlus::Vec2 ObstaclePosition)
-{
-    constexpr float hitboxsize = 10;
-
-    float dx2 = std::abs(circle2.x - ObstaclePosition.x);
-    float dy2 = std::abs(circle2.y - ObstaclePosition.y);
-
-    return (dx2 < hitboxsize && dy2 < hitboxsize);
-
-}
-//----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
-//障害物
-struct Obstacle {
-    DxPlus::Vec2 Position;
-
-};
-std::vector<Obstacle>Obstacles;
 int pinBall_lafID;//背景
 // 棒
-DxPlus::Vec2 bouCenter = { 500,650 };  // ← 中心座標（ここを動かせば棒全体が動く）
-DxPlus::Vec2 bouCenter2 = { 780,650 };
-float bouWidth = 200.0f;
+DxPlus::Vec2 bouCenter = { 530,660 };  // ← 中心座標（ここを動かせば棒全体が動く）
+DxPlus::Vec2 bouCenter2 = { 750,660 };
+float bouWidth = 170.0f;
 float bouHeight = 50.0f;
 float posY = 0.0f;
 float angle= 0.25f; // 入力で角度を変える用
 float angle2 = -0.25f;
+// 斜めの床（バーの先に続く）
+DxPlus::Vec2 slopeCenter = { 230, 595 };  // 位置
+float slopeWidth = 600.0f;
+float slopeHeight = 60.0f;
+float slopeAngle = 0.23f;  
+DxPlus::Vec2 slopeCenter2 = { 1045, 595 };  // 位置
+float slopeWidth2 = 600.0f;
+float slopeHeight2 = 60.0f;
+float slopeAngle2 = -0.23f; 
+//壁
+DxPlus::Vec2 wallCenter = { 0, 300 };  // 位置
+float wallWidth = 600.0f;
+float wallHeight = 60.0f;
+float wallAngle = 1.6f;
+DxPlus::Vec2 wallCenter2 = { 1280, 300 };  // 位置
+float wallWidth2 = 600.0f;
+float wallHeight2 = 60.0f;
+float wallAngle2 = -1.6f;
+DxPlus::Vec2 wallCenter3 = { 700, 0 };  // 位置
+float wallWidth3 = 1500.0f;
+float wallHeight3 = 60.0f;
+float wallAngle3= 3.15f;
+
 // 玉
 float ballRadius = 5.0f;
 float GRAVITY = 0.5f;
@@ -94,10 +98,6 @@ void Game_Init()
 {
     DxLib::SetBackgroundColor(0, 128, 255);
     pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
-    Obstacles.clear();
-    Obstacles.push_back({ {400, 400} });
-    Obstacles.push_back({ {600, 300} });
-    Obstacles.push_back({ {700, 500} });
     Game_Reset();
 }
 
@@ -231,7 +231,7 @@ void Game_Update()
             }
 
             // 飛ばす強さ（数値調整可能）
-            ballVelocity = hitDir * 20.0f;
+            ballVelocity = hitDir * 25.0f;
         }
         else if (vn < 0)
         {
@@ -267,40 +267,78 @@ void Game_Update()
             }
 
             // --- 飛ばす強さ（調整可能） ---
-            ballVelocity = hitDir2 * 20.0f;
+            ballVelocity = hitDir2 * 25.0f;
         }
         else if (vn2 < 0)
         {
             ballVelocity = ballVelocity - normal2 * vn2;
         }
     }
-    for (auto& obs : Obstacles)
+    DxPlus::Vec2 slopeNormal;
+    float slopePenetration;
+    if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter, slopeWidth, slopeHeight, slopeAngle, slopeNormal, slopePenetration))
     {
-        if (CheckCollision(ballPosition, ballRadius, obs.Position))
-        {
-            DxPlus::Vec2 dir = ballPosition - obs.Position;
-            float len = sqrt(dir.x * dir.x + dir.y * dir.y);
-            if (len > 0.0001f)
-            {
-                dir.x /= len;
-                dir.y /= len;
-            }
-            ballPosition = obs.Position + dir * (ballRadius+10.0f);
+        ballPosition = ballPosition + slopeNormal * slopePenetration;
 
-            float vn = ballVelocity.x * dir.x + ballVelocity.y * dir.y;
-            if (vn < 0)
-            {
-                ballVelocity = ballVelocity - dir * (2 * vn);
-            }
+        float vn = ballVelocity.x * slopeNormal.x + ballVelocity.y * slopeNormal.y;
+        if (vn < 0)
+        {
+            // 反射
+            ballVelocity = ballVelocity - slopeNormal * (2 * vn);
         }
     }
-        
-    
+    DxPlus::Vec2 slopeNormal2;
+    float slopePenetration2;
+    if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter2, slopeWidth2, slopeHeight2, slopeAngle2, slopeNormal2, slopePenetration2))
+    {
+        ballPosition = ballPosition + slopeNormal2 * slopePenetration2;
+
+        float vn2 = ballVelocity.x * slopeNormal2.x + ballVelocity.y * slopeNormal2.y;
+        if (vn2 < 0)
+        {
+            // 反射
+            ballVelocity = ballVelocity - slopeNormal2 * (2 * vn2);
+        }
+    }  
+    DxPlus::Vec2 wallNormal;
+    float wallPenetration;
+    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter, wallWidth, wallHeight, wallAngle, wallNormal, wallPenetration))
+    {
+        ballPosition = ballPosition + wallNormal * wallPenetration;
+
+        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+        if (vn < 0)
+        {
+            // 反射
+            ballVelocity = ballVelocity - wallNormal* (2 * vn);
+        }
+    }
+    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter2, wallWidth2, wallHeight2, wallAngle2, wallNormal, wallPenetration))
+    {
+        ballPosition = ballPosition + wallNormal * wallPenetration;
+
+        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+        if (vn < 0)
+        {
+            // 反射
+            ballVelocity = ballVelocity - wallNormal * (2 * vn);
+        }
+    }
+    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter3, wallWidth3, wallHeight3, wallAngle3, wallNormal, wallPenetration))
+    {
+        ballPosition = ballPosition + wallNormal * wallPenetration;
+
+        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+        if (vn < 0)
+        {
+            // 反射
+            ballVelocity = ballVelocity - wallNormal * (2 * vn);
+        }
+    }
+
 
     
-   
 }
-
 //----------------------------------------------------------------------
 // 描画処理
 //----------------------------------------------------------------------
@@ -314,7 +352,6 @@ void Game_Render()
         DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
 
-    DxPlus::Sprite::Draw(pinBall_lafID);
 
     // 棒を描画（中心を基準に回転）
     DxPlus::Vec2 bouTopLeft = {
@@ -336,10 +373,48 @@ void Game_Render()
         { bouWidth * 0.5f,bouHeight * 0.5f },
         angle2
     );
-    for (auto& obs : Obstacles)
-    {
-        DxPlus::Primitive2D::DrawCircle(obs.Position, 10, GetColor(255, 0, 0));
-    }
+    DxPlus::Primitive2D::DrawRect(
+        slopeCenter,
+        { slopeWidth, slopeHeight },
+        GetColor(80, 80, 80),
+        1.0f,
+        { slopeWidth * 0.5f, slopeHeight * 0.5f },
+        slopeAngle
+    );
+    DxPlus::Primitive2D::DrawRect(
+        slopeCenter2,
+        { slopeWidth2, slopeHeight2 },
+        GetColor(80, 80, 80),
+        1.0f,
+        { slopeWidth2 * 0.5f, slopeHeight2 * 0.5f },
+        slopeAngle2
+    );
+    DxPlus::Primitive2D::DrawRect(
+        wallCenter,
+        { wallWidth, wallHeight },
+        GetColor(80, 80, 80),
+        1.0f,
+        { wallWidth * 0.5f, wallHeight * 0.5f },
+        wallAngle
+    );
+    DxPlus::Primitive2D::DrawRect(
+        wallCenter2,
+        { wallWidth2, wallHeight2 },
+        GetColor(80, 80, 80),
+        1.0f,
+        { wallWidth2 * 0.5f, wallHeight2 * 0.5f },
+        wallAngle2
+    );
+    DxPlus::Primitive2D::DrawRect(
+        wallCenter3,
+        { wallWidth3, wallHeight3 },
+        GetColor(80, 80, 80),
+        1.0f,
+        { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
+        wallAngle3
+    );
+
+
     // 玉を描画
     DxPlus::Primitive2D::DrawCircle(ballPosition, 10, GetColor(0, 0, 0));
 }
