@@ -81,12 +81,15 @@ DxPlus::Vec2 wallCenter3 = { 700, 0 };  // 位置
 float wallWidth3 = 1500.0f;
 float wallHeight3 = 60.0f;
 float wallAngle3= 3.15f;
-
 // 玉
-float ballRadius = 5.0f;
+float ballRadius = 10.0f;
 float GRAVITY = 0.5f;
 DxPlus::Vec2 ballPosition = { 500,100 };
 DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
+//ハート
+int heartID;
+float heartRadius = 50.0f;
+DxPlus::Vec2 heartPosition = { 645,300 };
 // nextScene の extern 宣言
 extern int nextScene;
 int gameState;
@@ -98,6 +101,7 @@ void Game_Init()
 {
     DxLib::SetBackgroundColor(0, 128, 255);
     pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
+    heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
     Game_Reset();
 }
 
@@ -335,8 +339,30 @@ void Game_Update()
             ballVelocity = ballVelocity - wallNormal * (2 * vn);
         }
     }
+    DxPlus::Vec2 delta = { ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y };
+    float dist2 = delta.x * delta.x + delta.y * delta.y;
+    float radiusSum = ballRadius + heartRadius;
+    if (dist2 <= radiusSum * radiusSum)
+    {
+        float dist = sqrt(dist2);
+        if (dist == 0.0f) {
+            // 完全に重なった場合は上方向に押し出す
+            delta = { 0.0f, -1.0f };
+            dist = 1.0f;
+        }
+        DxPlus::Vec2 normal = { delta.x / dist, delta.y / dist };
 
+        // めり込み解消
+        float penetration = radiusSum - dist;
+        ballPosition = ballPosition + normal * penetration;
 
+        // 法線方向の速度成分
+        float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
+
+        // 反射
+        if (vn < 0.0f)
+            ballVelocity = ballVelocity - normal * (2 * vn);
+    }
     
 }
 //----------------------------------------------------------------------
@@ -358,7 +384,6 @@ void Game_Render()
     bouCenter.x - bouWidth * 0.5f,
     bouCenter.y - bouHeight * 0.5f
     };
-
     DxPlus::Primitive2D::DrawRect(
         bouCenter, { bouWidth, bouHeight },
         GetColor(0, 0, 0),
@@ -373,6 +398,7 @@ void Game_Render()
         { bouWidth * 0.5f,bouHeight * 0.5f },
         angle2
     );
+    //斜めの棒
     DxPlus::Primitive2D::DrawRect(
         slopeCenter,
         { slopeWidth, slopeHeight },
@@ -389,6 +415,7 @@ void Game_Render()
         { slopeWidth2 * 0.5f, slopeHeight2 * 0.5f },
         slopeAngle2
     );
+    //壁
     DxPlus::Primitive2D::DrawRect(
         wallCenter,
         { wallWidth, wallHeight },
@@ -413,10 +440,11 @@ void Game_Render()
         { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
         wallAngle3
     );
-
-
+    //ハート
+    DxPlus::Primitive2D::DrawCircle(heartPosition, heartRadius, GetColor(0, 0, 0));
+    DxPlus::Sprite::Draw(heartID, {570,230});
     // 玉を描画
-    DxPlus::Primitive2D::DrawCircle(ballPosition, 10, GetColor(0, 0, 0));
+    DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
 }
 
 //----------------------------------------------------------------------
