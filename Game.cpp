@@ -98,6 +98,7 @@ DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
 int heartID;
 float heartRadius = 50.0f;
 DxPlus::Vec2 heartPosition = { 645,300 };
+int heartPoint = 0;
 // nextScene の extern 宣言
 extern int nextScene;
 int gameState;
@@ -211,10 +212,13 @@ void Game_Update()
 
     wasPressed = isPressed;
     wasPressed2 = isPressed2;
+    //　現在のゲームシーン
     switch (Scene)
     {
+    //　ゲーム画面
     case Game:
     {
+        //　バーの当たり判定（左）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
         {
             // --- めり込み解消 ---
@@ -255,6 +259,7 @@ void Game_Update()
                 ballVelocity = ballVelocity - normal * vn;
             }
         }
+        //　バーの当たり判定（右）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter2, bouWidth, bouHeight, angle2, normal2, penetration2))
         {
             ballPosition = ballPosition + normal2 * penetration2;
@@ -290,6 +295,7 @@ void Game_Update()
                 ballVelocity = ballVelocity - normal2 * vn2;
             }
         }
+        //　斜めの床の当たり判定（左）
         DxPlus::Vec2 slopeNormal;
         float slopePenetration;
         if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter, slopeWidth, slopeHeight, slopeAngle, slopeNormal, slopePenetration))
@@ -304,6 +310,7 @@ void Game_Update()
                 ballVelocity.y *= 0.99f;
             }
         }
+        //　斜めの床の当たり判定（右）
         DxPlus::Vec2 slopeNormal2;
         float slopePenetration2;
         if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter2, slopeWidth2, slopeHeight2, slopeAngle2, slopeNormal2, slopePenetration2))
@@ -318,6 +325,7 @@ void Game_Update()
                 ballVelocity.y *= 0.99f;
             }
         }
+        //　壁の当たり判定（左）
         DxPlus::Vec2 wallNormal;
         float wallPenetration;
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter, wallWidth, wallHeight, wallAngle, wallNormal, wallPenetration))
@@ -331,6 +339,7 @@ void Game_Update()
                 ballVelocity = ballVelocity - wallNormal * (2 * vn);
             }
         }
+        //　壁の当たり判定（右）
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter2, wallWidth2, wallHeight2, wallAngle2, wallNormal, wallPenetration))
         {
             ballPosition = ballPosition + wallNormal * wallPenetration;
@@ -342,6 +351,7 @@ void Game_Update()
                 ballVelocity = ballVelocity - wallNormal * (2 * vn);
             }
         }
+        //　天井の当たり判定
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter3, wallWidth3, wallHeight3, wallAngle3, wallNormal, wallPenetration))
         {
             ballPosition = ballPosition + wallNormal * wallPenetration;
@@ -353,6 +363,7 @@ void Game_Update()
                 ballVelocity = ballVelocity - wallNormal * (2 * vn);
             }
         }
+        //　ハートの当たり判定
         DxPlus::Vec2 delta = { ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y };
         float dist2 = delta.x * delta.x + delta.y * delta.y;
         float radiusSum = ballRadius + heartRadius;
@@ -375,18 +386,36 @@ void Game_Update()
 
             // 反射
             if (vn < 0.0f)
+            {
                 ballVelocity = ballVelocity - normal * (2 * vn);
+                // ポイントの増加
+                heartPoint += 100;
+            }    
+
         }
+        //　ゲームクリアに切り替え
+        if (heartPoint >= 100)
+        {
+            Scene = GameScene::GameClear;
+        }
+        // ゲームオーバーに切り替え
         if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
         {
             Scene = GameScene::GameOver;
         }
     }
     break;
+    case GameClear:
+    {
+        
+    }
+    break;
+    //　ゲームオーバー画面
     case GameOver:
     {
         
     }
+    break;
     }
     
 }
@@ -476,10 +505,44 @@ void Game_Render()
 
     }
     break;
+    case GameClear:
+    {
+        DxPlus::Sprite::Draw(pinBall_lafID);
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter,
+            { wallWidth, wallHeight },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth * 0.5f, wallHeight * 0.5f },
+            wallAngle
+        );
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter2,
+            { wallWidth2, wallHeight2 },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth2 * 0.5f, wallHeight2 * 0.5f },
+            wallAngle2
+        );
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter3,
+            { wallWidth3, wallHeight3 },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
+            wallAngle3
+        );
+        //ハート
+        DxPlus::Primitive2D::DrawCircle(heartPosition, heartRadius, GetColor(0, 0, 0));
+        DxPlus::Sprite::Draw(heartID, { 570,230 });
+
+    }
+    break;
     case GameOver:
     {
         DxPlus::Sprite::Draw(pinBall_lafID);
     }
+    break;
    }
     
 }
