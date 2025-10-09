@@ -50,6 +50,14 @@ bool CircleOBBCollision(
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
+
+//ゲームシーン
+enum GameScene {
+    Game,
+    GameOver,
+    GameClear,
+};
+GameScene Scene = Game;
 int pinBall_lafID;//背景
 // 棒
 DxPlus::Vec2 bouCenter = { 530,660 };  // ← 中心座標（ここを動かせば棒全体が動く）
@@ -100,6 +108,7 @@ float gameFadeTimer;
 void Game_Init()
 {
     DxLib::SetBackgroundColor(0, 128, 255);
+    Scene = Game;
     pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
     heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
     Game_Reset();
@@ -202,166 +211,182 @@ void Game_Update()
 
     wasPressed = isPressed;
     wasPressed2 = isPressed2;
-
-    if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
+    switch (Scene)
     {
-        // --- めり込み解消 ---
-        ballPosition = ballPosition + normal * penetration;
-
-        // 法線方向の速度成分
-        float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
-
-        // 「押した瞬間」を特別扱い
-        if (pressedNow && vn < 0)
+    case Game:
+    {
+        if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
         {
-            // --- 強制的に飛ばす ---
-            DxPlus::Vec2 tangent = { -normal.y, normal.x };
+            // --- めり込み解消 ---
+            ballPosition = ballPosition + normal * penetration;
 
-            // ヒット位置によって方向をずらす
-            float c = cos(-angle);
-            float s = sin(-angle);
-            DxPlus::Vec2 local;
-            local.x = (ballPosition.x - bouCenter.x) * c - (ballPosition.y - bouCenter.y) * s;
-            local.y = (ballPosition.x - bouCenter.x) * s + (ballPosition.y - bouCenter.y) * c;
+            // 法線方向の速度成分
+            float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
 
-            float relativeX = local.x / (bouWidth * 0.5f);
-            relativeX = std::max(-1.0f, std::min(1.0f, relativeX));
+            // 「押した瞬間」を特別扱い
+            if (pressedNow && vn < 0)
+            {
+                // --- 強制的に飛ばす ---
+                DxPlus::Vec2 tangent = { -normal.y, normal.x };
 
-            DxPlus::Vec2 hitDir = normal + tangent * relativeX * 0.8f;
-            float len = sqrt(hitDir.x * hitDir.x + hitDir.y * hitDir.y);
-            if (len > 0.0001f) {
-                hitDir.x /= len;
-                hitDir.y /= len;
+                // ヒット位置によって方向をずらす
+                float c = cos(-angle);
+                float s = sin(-angle);
+                DxPlus::Vec2 local;
+                local.x = (ballPosition.x - bouCenter.x) * c - (ballPosition.y - bouCenter.y) * s;
+                local.y = (ballPosition.x - bouCenter.x) * s + (ballPosition.y - bouCenter.y) * c;
+
+                float relativeX = local.x / (bouWidth * 0.5f);
+                relativeX = std::max(-1.0f, std::min(1.0f, relativeX));
+
+                DxPlus::Vec2 hitDir = normal + tangent * relativeX * 0.8f;
+                float len = sqrt(hitDir.x * hitDir.x + hitDir.y * hitDir.y);
+                if (len > 0.0001f) {
+                    hitDir.x /= len;
+                    hitDir.y /= len;
+                }
+
+                // 飛ばす強さ（数値調整可能）
+                ballVelocity = hitDir * 25.0f;
             }
-
-            // 飛ばす強さ（数値調整可能）
-            ballVelocity = hitDir * 25.0f;
-        }
-        else if (vn < 0)
-        {
-            // 普通に反射／転がし処理
-            ballVelocity = ballVelocity - normal * vn;
-        }
-    }
-    if (CircleOBBCollision(ballPosition, ballRadius, bouCenter2, bouWidth, bouHeight, angle2, normal2, penetration2))
-    {
-        ballPosition = ballPosition + normal2 * penetration2;
-
-        float vn2 = ballVelocity.x * normal2.x + ballVelocity.y * normal2.y;
-        if (pressedNow2 && vn2 < 0)
-        {
-            DxPlus::Vec2 tangent2 = { -normal2.y, normal2.x };
-
-            // --- ローカル座標に変換 ---
-            float c2 = cos(-angle2);
-            float s2 = sin(-angle2);
-            DxPlus::Vec2 local2;
-            local2.x = (ballPosition.x - bouCenter2.x) * c2 - (ballPosition.y - bouCenter2.y) * s2;
-            local2.y = (ballPosition.x - bouCenter2.x) * s2 + (ballPosition.y - bouCenter2.y) * c2;
-
-            float relativeX2 = local2.x / (bouWidth * 0.5f);
-            relativeX2 = std::max(-1.0f, std::min(1.0f, relativeX2));
-
-            // --- 方向を決める ---
-            DxPlus::Vec2 hitDir2 = normal2 + tangent2 * relativeX2 * 0.8f;
-            float len2 = sqrt(hitDir2.x * hitDir2.x + hitDir2.y * hitDir2.y);
-            if (len2 > 0.0001f) {
-                hitDir2.x /= len2;
-                hitDir2.y /= len2;
+            else if (vn < 0)
+            {
+                // 普通に反射／転がし処理
+                ballVelocity = ballVelocity - normal * vn;
             }
-
-            // --- 飛ばす強さ（調整可能） ---
-            ballVelocity = hitDir2 * 25.0f;
         }
-        else if (vn2 < 0)
+        if (CircleOBBCollision(ballPosition, ballRadius, bouCenter2, bouWidth, bouHeight, angle2, normal2, penetration2))
         {
-            ballVelocity = ballVelocity - normal2 * vn2;
+            ballPosition = ballPosition + normal2 * penetration2;
+
+            float vn2 = ballVelocity.x * normal2.x + ballVelocity.y * normal2.y;
+            if (pressedNow2 && vn2 < 0)
+            {
+                DxPlus::Vec2 tangent2 = { -normal2.y, normal2.x };
+
+                // --- ローカル座標に変換 ---
+                float c2 = cos(-angle2);
+                float s2 = sin(-angle2);
+                DxPlus::Vec2 local2;
+                local2.x = (ballPosition.x - bouCenter2.x) * c2 - (ballPosition.y - bouCenter2.y) * s2;
+                local2.y = (ballPosition.x - bouCenter2.x) * s2 + (ballPosition.y - bouCenter2.y) * c2;
+
+                float relativeX2 = local2.x / (bouWidth * 0.5f);
+                relativeX2 = std::max(-1.0f, std::min(1.0f, relativeX2));
+
+                // --- 方向を決める ---
+                DxPlus::Vec2 hitDir2 = normal2 + tangent2 * relativeX2 * 0.8f;
+                float len2 = sqrt(hitDir2.x * hitDir2.x + hitDir2.y * hitDir2.y);
+                if (len2 > 0.0001f) {
+                    hitDir2.x /= len2;
+                    hitDir2.y /= len2;
+                }
+
+                // --- 飛ばす強さ（調整可能） ---
+                ballVelocity = hitDir2 * 25.0f;
+            }
+            else if (vn2 < 0)
+            {
+                ballVelocity = ballVelocity - normal2 * vn2;
+            }
+        }
+        DxPlus::Vec2 slopeNormal;
+        float slopePenetration;
+        if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter, slopeWidth, slopeHeight, slopeAngle, slopeNormal, slopePenetration))
+        {
+            ballPosition = ballPosition + slopeNormal * slopePenetration;
+
+            float vn = ballVelocity.x * slopeNormal.x + ballVelocity.y * slopeNormal.y;
+            if (vn < 0)
+            {
+                ballVelocity = ballVelocity - slopeNormal * vn;
+                ballVelocity.x *= 0.99f;
+                ballVelocity.y *= 0.99f;
+            }
+        }
+        DxPlus::Vec2 slopeNormal2;
+        float slopePenetration2;
+        if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter2, slopeWidth2, slopeHeight2, slopeAngle2, slopeNormal2, slopePenetration2))
+        {
+            ballPosition = ballPosition + slopeNormal2 * slopePenetration2;
+
+            float vn2 = ballVelocity.x * slopeNormal2.x + ballVelocity.y * slopeNormal2.y;
+            if (vn2 < 0)
+            {
+                ballVelocity = ballVelocity - slopeNormal2 * vn2;
+                ballVelocity.x *= 0.99f;
+                ballVelocity.y *= 0.99f;
+            }
+        }
+        DxPlus::Vec2 wallNormal;
+        float wallPenetration;
+        if (CircleOBBCollision(ballPosition, ballRadius, wallCenter, wallWidth, wallHeight, wallAngle, wallNormal, wallPenetration))
+        {
+            ballPosition = ballPosition + wallNormal * wallPenetration;
+
+            float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+            if (vn < 0)
+            {
+                // 反射
+                ballVelocity = ballVelocity - wallNormal * (2 * vn);
+            }
+        }
+        if (CircleOBBCollision(ballPosition, ballRadius, wallCenter2, wallWidth2, wallHeight2, wallAngle2, wallNormal, wallPenetration))
+        {
+            ballPosition = ballPosition + wallNormal * wallPenetration;
+
+            float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+            if (vn < 0)
+            {
+                // 反射
+                ballVelocity = ballVelocity - wallNormal * (2 * vn);
+            }
+        }
+        if (CircleOBBCollision(ballPosition, ballRadius, wallCenter3, wallWidth3, wallHeight3, wallAngle3, wallNormal, wallPenetration))
+        {
+            ballPosition = ballPosition + wallNormal * wallPenetration;
+
+            float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
+            if (vn < 0)
+            {
+                // 反射
+                ballVelocity = ballVelocity - wallNormal * (2 * vn);
+            }
+        }
+        DxPlus::Vec2 delta = { ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y };
+        float dist2 = delta.x * delta.x + delta.y * delta.y;
+        float radiusSum = ballRadius + heartRadius;
+        if (dist2 <= radiusSum * radiusSum)
+        {
+            float dist = sqrt(dist2);
+            if (dist == 0.0f) {
+                // 完全に重なった場合は上方向に押し出す
+                delta = { 0.0f, -1.0f };
+                dist = 1.0f;
+            }
+            DxPlus::Vec2 normal = { delta.x / dist, delta.y / dist };
+
+            // めり込み解消
+            float penetration = radiusSum - dist;
+            ballPosition = ballPosition + normal * penetration;
+
+            // 法線方向の速度成分
+            float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
+
+            // 反射
+            if (vn < 0.0f)
+                ballVelocity = ballVelocity - normal * (2 * vn);
+        }
+        if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
+        {
+            Scene = GameScene::GameOver;
         }
     }
-    DxPlus::Vec2 slopeNormal;
-    float slopePenetration;
-    if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter, slopeWidth, slopeHeight, slopeAngle, slopeNormal, slopePenetration))
+    break;
+    case GameOver:
     {
-        ballPosition = ballPosition + slopeNormal * slopePenetration;
-
-        float vn = ballVelocity.x * slopeNormal.x + ballVelocity.y * slopeNormal.y;
-        if (vn < 0)
-        {
-            // 反射
-            ballVelocity = ballVelocity - slopeNormal * (2 * vn);
-        }
+        
     }
-    DxPlus::Vec2 slopeNormal2;
-    float slopePenetration2;
-    if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter2, slopeWidth2, slopeHeight2, slopeAngle2, slopeNormal2, slopePenetration2))
-    {
-        ballPosition = ballPosition + slopeNormal2 * slopePenetration2;
-
-        float vn2 = ballVelocity.x * slopeNormal2.x + ballVelocity.y * slopeNormal2.y;
-        if (vn2 < 0)
-        {
-            // 反射
-            ballVelocity = ballVelocity - slopeNormal2 * (2 * vn2);
-        }
-    }  
-    DxPlus::Vec2 wallNormal;
-    float wallPenetration;
-    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter, wallWidth, wallHeight, wallAngle, wallNormal, wallPenetration))
-    {
-        ballPosition = ballPosition + wallNormal * wallPenetration;
-
-        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
-        if (vn < 0)
-        {
-            // 反射
-            ballVelocity = ballVelocity - wallNormal* (2 * vn);
-        }
-    }
-    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter2, wallWidth2, wallHeight2, wallAngle2, wallNormal, wallPenetration))
-    {
-        ballPosition = ballPosition + wallNormal * wallPenetration;
-
-        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
-        if (vn < 0)
-        {
-            // 反射
-            ballVelocity = ballVelocity - wallNormal * (2 * vn);
-        }
-    }
-    if (CircleOBBCollision(ballPosition, ballRadius, wallCenter3, wallWidth3, wallHeight3, wallAngle3, wallNormal, wallPenetration))
-    {
-        ballPosition = ballPosition + wallNormal * wallPenetration;
-
-        float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
-        if (vn < 0)
-        {
-            // 反射
-            ballVelocity = ballVelocity - wallNormal * (2 * vn);
-        }
-    }
-    DxPlus::Vec2 delta = { ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y };
-    float dist2 = delta.x * delta.x + delta.y * delta.y;
-    float radiusSum = ballRadius + heartRadius;
-    if (dist2 <= radiusSum * radiusSum)
-    {
-        float dist = sqrt(dist2);
-        if (dist == 0.0f) {
-            // 完全に重なった場合は上方向に押し出す
-            delta = { 0.0f, -1.0f };
-            dist = 1.0f;
-        }
-        DxPlus::Vec2 normal = { delta.x / dist, delta.y / dist };
-
-        // めり込み解消
-        float penetration = radiusSum - dist;
-        ballPosition = ballPosition + normal * penetration;
-
-        // 法線方向の速度成分
-        float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
-
-        // 反射
-        if (vn < 0.0f)
-            ballVelocity = ballVelocity - normal * (2 * vn);
     }
     
 }
@@ -378,73 +403,85 @@ void Game_Render()
         DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
 
+    switch (Scene)
+    {
+    case Game:
+    {
+        // 棒を描画（中心を基準に回転）
+        DxPlus::Vec2 bouTopLeft = {
+        bouCenter.x - bouWidth * 0.5f,
+        bouCenter.y - bouHeight * 0.5f
+        };
+        DxPlus::Primitive2D::DrawRect(
+            bouCenter, { bouWidth, bouHeight },
+            GetColor(0, 0, 0),
+            1.0f,
+            { bouWidth * 0.5f, bouHeight * 0.5f },
+            angle
+        );
+        DxPlus::Primitive2D::DrawRect(
+            bouCenter2, { bouWidth,bouHeight },
+            GetColor(0, 0, 0),
+            1.0f,
+            { bouWidth * 0.5f,bouHeight * 0.5f },
+            angle2
+        );
+        //斜めの棒
+        DxPlus::Primitive2D::DrawRect(
+            slopeCenter,
+            { slopeWidth, slopeHeight },
+            GetColor(80, 80, 80),
+            1.0f,
+            { slopeWidth * 0.5f, slopeHeight * 0.5f },
+            slopeAngle
+        );
+        DxPlus::Primitive2D::DrawRect(
+            slopeCenter2,
+            { slopeWidth2, slopeHeight2 },
+            GetColor(80, 80, 80),
+            1.0f,
+            { slopeWidth2 * 0.5f, slopeHeight2 * 0.5f },
+            slopeAngle2
+        );
+        //壁
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter,
+            { wallWidth, wallHeight },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth * 0.5f, wallHeight * 0.5f },
+            wallAngle
+        );
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter2,
+            { wallWidth2, wallHeight2 },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth2 * 0.5f, wallHeight2 * 0.5f },
+            wallAngle2
+        );
+        DxPlus::Primitive2D::DrawRect(
+            wallCenter3,
+            { wallWidth3, wallHeight3 },
+            GetColor(80, 80, 80),
+            1.0f,
+            { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
+            wallAngle3
+        );
+        //ハート
+        DxPlus::Primitive2D::DrawCircle(heartPosition, heartRadius, GetColor(0, 0, 0));
+        DxPlus::Sprite::Draw(heartID, { 570,230 });
+        // 玉を描画
+        DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
 
-    // 棒を描画（中心を基準に回転）
-    DxPlus::Vec2 bouTopLeft = {
-    bouCenter.x - bouWidth * 0.5f,
-    bouCenter.y - bouHeight * 0.5f
-    };
-    DxPlus::Primitive2D::DrawRect(
-        bouCenter, { bouWidth, bouHeight },
-        GetColor(0, 0, 0),
-        1.0f,
-        { bouWidth * 0.5f, bouHeight * 0.5f },
-        angle 
-    );
-    DxPlus::Primitive2D::DrawRect(
-        bouCenter2, { bouWidth,bouHeight },
-        GetColor(0, 0, 0),
-        1.0f,
-        { bouWidth * 0.5f,bouHeight * 0.5f },
-        angle2
-    );
-    //斜めの棒
-    DxPlus::Primitive2D::DrawRect(
-        slopeCenter,
-        { slopeWidth, slopeHeight },
-        GetColor(80, 80, 80),
-        1.0f,
-        { slopeWidth * 0.5f, slopeHeight * 0.5f },
-        slopeAngle
-    );
-    DxPlus::Primitive2D::DrawRect(
-        slopeCenter2,
-        { slopeWidth2, slopeHeight2 },
-        GetColor(80, 80, 80),
-        1.0f,
-        { slopeWidth2 * 0.5f, slopeHeight2 * 0.5f },
-        slopeAngle2
-    );
-    //壁
-    DxPlus::Primitive2D::DrawRect(
-        wallCenter,
-        { wallWidth, wallHeight },
-        GetColor(80, 80, 80),
-        1.0f,
-        { wallWidth * 0.5f, wallHeight * 0.5f },
-        wallAngle
-    );
-    DxPlus::Primitive2D::DrawRect(
-        wallCenter2,
-        { wallWidth2, wallHeight2 },
-        GetColor(80, 80, 80),
-        1.0f,
-        { wallWidth2 * 0.5f, wallHeight2 * 0.5f },
-        wallAngle2
-    );
-    DxPlus::Primitive2D::DrawRect(
-        wallCenter3,
-        { wallWidth3, wallHeight3 },
-        GetColor(80, 80, 80),
-        1.0f,
-        { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
-        wallAngle3
-    );
-    //ハート
-    DxPlus::Primitive2D::DrawCircle(heartPosition, heartRadius, GetColor(0, 0, 0));
-    DxPlus::Sprite::Draw(heartID, {570,230});
-    // 玉を描画
-    DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
+    }
+    break;
+    case GameOver:
+    {
+        DxPlus::Sprite::Draw(pinBall_lafID);
+    }
+   }
+    
 }
 
 //----------------------------------------------------------------------
