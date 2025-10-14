@@ -1,3 +1,4 @@
+
 #include "Game.h"
 #include "DxPlus/DxPlus.h"
 #include "WinMain.h"
@@ -50,36 +51,41 @@ bool CircleOBBCollision(
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
-static int fadeCount = 0;
-static const int maxFade = 180; // 約3秒で暗転
-static bool soundPlayed = false;
-static int seHorror = -1;
-static int flashTimer = 0;
+
 //ゲームシーン
 enum GameScene {
     Game,
     GameOver,
+    GameEnd_A,
+    GameEnd_B,
+    GameEnd_C,
+    GameEnd_D,
     GameClear,
 };
 GameScene Scene = Game;
-int pinBall_lafID;//背景
+//背景
+int pinBall_lafID;
+int End_A;
+int End_B;
+int End_C;
+int End_D;
 // 棒
-DxPlus::Vec2 bouCenter = { 530,660 };  // ← 中心座標（ここを動かせば棒全体が動く）
-DxPlus::Vec2 bouCenter2 = { 750,660 };
+DxPlus::Vec2 bouCenter = { 530,663 };  // ← 中心座標（ここを動かせば棒全体が動く）
+DxPlus::Vec2 bouCenter2 = { 750,663 };
 float bouWidth = 170.0f;
 float bouHeight = 50.0f;
 float posY = 0.0f;
-float angle = 0.25f; // 入力で角度を変える用
+float angle= 0.25f; // 入力で角度を変える用
 float angle2 = -0.25f;
 // 斜めの床（バーの先に続く）
 DxPlus::Vec2 slopeCenter = { 230, 595 };  // 位置
 float slopeWidth = 600.0f;
 float slopeHeight = 60.0f;
-float slopeAngle = 0.23f;
+float slopeAngle = 0.23f;  
 DxPlus::Vec2 slopeCenter2 = { 1045, 595 };  // 位置
 float slopeWidth2 = 600.0f;
 float slopeHeight2 = 60.0f;
-float slopeAngle2 = -0.23f;
+float slopeAngle2 = -0.23f; 
 // 壁(左)
 DxPlus::Vec2 wallCenter = { 0, 300 };  // 位置
 float wallWidth = 600.0f;
@@ -94,12 +100,12 @@ float wallAngle2 = -1.6f;
 DxPlus::Vec2 wallCenter3 = { 700, 0 };  // 位置
 float wallWidth3 = 1500.0f;
 float wallHeight3 = 60.0f;
-float wallAngle3 = 3.15f;
+float wallAngle3= 3.15f;
 // 棒
 DxPlus::Vec2 objectPosition{ 200,300 };
 float objectWidth = 200.0f;
 float objectHeight = 20;
-float objectAngle = 0.23f;
+float objectAngle = -0.23f;
 // 玉
 float ballRadius = 10.0f;
 float GRAVITY = 0.5f;
@@ -108,24 +114,27 @@ DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
 //ハート
 int heartID;
 int heartPoint = 0;
-DxPlus::Vec2 HeartPosition = { 600,100 };
+DxPlus::Vec2 HeartPosition = { 1000,300};
 float HeartRadius = 40.0f;
 // ハートと連動する障害物
 bool Heart = false;
-DxPlus::Vec2 HeartObjectPosition = { 200,200 };
+DxPlus::Vec2 HeartObjectPosition = { 630,100 };
 float HeartObjectRadius = 40.0f;
 // ★変更：それぞれのハートに独立したタイプを持たせる
 static int PointType1 = 1;
 static int PointType2 = 2;
+// 発射装置
+DxPlus::Vec2 shotBallPosition = { 200,200};
+float shotBallRadius = 70.0f;
 //ポイント
 int pointCounter;
 bool pointTipe;
 float PointRadius = 50.0f;
-DxPlus::Vec2 PointPosition = { 845,300 };
-DxPlus::Vec2 PointPosition2 = { 300,100 };
+DxPlus::Vec2 PointPosition = { 875,100 };
+DxPlus::Vec2 PointPosition2 = { 500,100 };
 // タイマー
 float currentTime = 0.0f;
-float timeLimit = 5.0f; // 60秒制限
+float timeLimit = 999.0f; // 60秒制限
 // nextScene の extern 宣言
 extern int nextScene;
 int gameState;
@@ -138,6 +147,10 @@ void Game_Init()
     DxLib::SetBackgroundColor(0, 128, 255);
     Scene = Game;
     pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
+    End_A= DxPlus::Sprite::Load(L"./Data/Images/Background1_Hole.png");
+    End_B= DxPlus::Sprite::Load(L"./Data/Images/back.png");
+    End_C= DxPlus::Sprite::Load(L"./Data/Images/Background2.png");
+    End_D= DxPlus::Sprite::Load(L"./Data/Images/space.png");
     heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
     srand((unsigned int)time(NULL));  // 乱数の初期化
     PointType1 = rand() % 2 + 1;
@@ -148,10 +161,10 @@ void Game_Init()
 //----------------------------------------------------------------------
 // リセット
 //----------------------------------------------------------------------
-void Game_Reset()
-{
-    gameState = 0;
-    gameFadeTimer = 1.0f;
+void Game_Reset() 
+{ 
+    gameState = 0; 
+    gameFadeTimer = 1.0f; 
 }
 
 //----------------------------------------------------------------------
@@ -159,7 +172,7 @@ void Game_Reset()
 //----------------------------------------------------------------------
 void Game_Update()
 {
-
+    
 
     switch (gameState)
     {
@@ -212,7 +225,7 @@ void Game_Update()
     prevBouPosition2 = bouCenter2;
     float penetration;
     float penetration2;
-
+   
 
     static bool wasPressed = false;  // 前フレームのAキー状態
     bool isPressed = (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_LEFT);
@@ -249,13 +262,29 @@ void Game_Update()
     //　現在のゲームシーン
     switch (Scene)
     {
-        //　ゲーム画面
+    //　ゲーム画面
     case Game:
     {
         currentTime += 1.0f / 60.0f;
-        if (currentTime >= timeLimit)
+        if (currentTime >=timeLimit)
         {
-            Scene = GameScene::GameOver;
+            if (heartPoint <= 0)
+            {
+                Scene = GameScene::GameEnd_A;
+            }
+            else if (heartPoint<50)
+            {
+                Scene = GameScene::GameEnd_B;
+            }
+            else if (heartPoint <= 99)
+            {
+                Scene = GameScene::GameEnd_C;
+            }
+            else if (heartPoint >= 100)
+            {
+                Scene = GameScene::GameClear;
+            }
+            
         }
         //　バーの当たり判定（左）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
@@ -403,7 +432,7 @@ void Game_Update()
             }
         }
         // 障害物
-        /*if (CircleOBBCollision(ballPosition, ballRadius, objectPosition, objectWidth, objectHeight, objectAngle, wallNormal, wallPenetration))
+        if (CircleOBBCollision(ballPosition, ballRadius, objectPosition, objectWidth, objectHeight, objectAngle, wallNormal, wallPenetration))
         {
             ballPosition = ballPosition + wallNormal * wallPenetration;
 
@@ -413,9 +442,9 @@ void Game_Update()
                 // 反射
                 ballVelocity = ballVelocity - wallNormal * (6 * vn);
             }
-        }*/
+        }
         // --- ハート ---
-        DxPlus::Vec2 delta = { ballPosition.x - HeartPosition.x, ballPosition.y - HeartPosition.y };
+        DxPlus::Vec2 delta = {ballPosition.x - HeartPosition.x, ballPosition.y - HeartPosition.y};
         float dist = delta.x * delta.x + delta.y * delta.y;
         float radiusSum = ballRadius + HeartRadius;
         bool isCollidingHeart1 = (dist <= radiusSum * radiusSum);
@@ -443,12 +472,13 @@ void Game_Update()
                 {
                     Heart = true;
                 }
-                ballVelocity = ballVelocity - normal * (1.6f * vn);
+                ballVelocity = ballVelocity - normal * (1.6f * vn); 
             }
 
         }
+        
         // ハートと連動する障害物
-        DxPlus::Vec2 delta2 = { ballPosition.x - HeartObjectPosition.x, ballPosition.y - HeartObjectPosition.y };
+        DxPlus::Vec2 delta2 = {ballPosition.x - HeartObjectPosition.x, ballPosition.y - HeartObjectPosition.y};
         float dist3 = delta2.x * delta2.x + delta2.y * delta2.y;
         float radiusSum2 = ballRadius + HeartObjectRadius;
         bool isCollidingHeart = (dist3 <= radiusSum2 * radiusSum2);
@@ -470,11 +500,11 @@ void Game_Update()
             {
                 if (Heart)
                 {
-                    heartPoint = 100;
+                    heartPoint = 0;
                 }
                 else
                 {
-
+                   
                 }
                 ballVelocity = ballVelocity - normal2 * (1.6f * vn);
             }
@@ -485,26 +515,26 @@ void Game_Update()
         // フレーム間で当たっていたかを記録
         static bool wasCollidingHeart1 = false;
         static bool wasCollidingHeart2 = false;
+        
+        // --- ポイント ---
+        DxPlus::Vec2 Pointdelta = {ballPosition.x - PointPosition.x, ballPosition.y - PointPosition.y};
+        float dist2 = Pointdelta.x * Pointdelta.x + Pointdelta.y * Pointdelta.y;
+        float PointradiusSum = ballRadius + PointRadius;
+        bool isCollidingPoint1 = (dist2 <= PointradiusSum * PointradiusSum);
 
-        // --- ハート1 ---
-       /* DxPlus::Vec2 delta = {ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y};
-        float dist2 = delta.x * delta.x + delta.y * delta.y;
-        float radiusSum = ballRadius + heartRadius;
-        bool isCollidingHeart1 = (dist2 <= radiusSum * radiusSum);
-
-        if (isCollidingHeart1)
+        if (isCollidingPoint1)
         {
             float dist = sqrt(dist2);
             if (dist == 0.0f) {
-                delta = { 0.0f, -1.0f };
+                Pointdelta = { 0.0f, -1.0f };
                 dist = 1.0f;
             }
-            DxPlus::Vec2 normal = { delta.x / dist, delta.y / dist };
+            DxPlus::Vec2 normal = { Pointdelta.x / dist, Pointdelta.y / dist };
 
             // めり込み解消
-            float penetration = radiusSum - dist;
-            ballPosition = ballPosition + normal * penetration;
-
+            float Pointpenetration = PointradiusSum - dist;
+            ballPosition = ballPosition + normal * Pointpenetration;
+            
             float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
 
             if (vn < 0.0f)
@@ -513,33 +543,34 @@ void Game_Update()
 
                 if (!wasCollidingHeart1)
                 {
-                    if (heartType1 == 1)
-                        heartPoint += 100;
+                    if (PointType1 == 1)
+                        heartPoint += 0;
                     else
-                        heartPoint += 5;
+                        heartPoint += 0;
 
-                    heartType1 = rand() % 2 + 1; // 次の色にランダム変更
+                    PointType1 = rand() % 2 + 1;
+                    PointType2 = rand() % 2 + 1;// 次の色にランダム変更
                 }
             }
         }
-        wasCollidingHeart1 = isCollidingHeart1;
+        wasCollidingHeart1 = isCollidingPoint1;
+       
 
+        // --- ポイント2 ---
+        DxPlus::Vec2 Pointdelta2 = { ballPosition.x - PointPosition2.x, ballPosition.y - PointPosition2.y };
+        float Pointdist3 = Pointdelta2.x * Pointdelta2.x + Pointdelta2.y * Pointdelta2.y;
+        bool isCollidingPoint2 = (Pointdist3 <= PointradiusSum * PointradiusSum);
 
-        // --- ハート2 ---
-        DxPlus::Vec2 delta2 = { ballPosition.x - heartPosition2.x, ballPosition.y - heartPosition2.y };
-        float dist3 = delta2.x * delta2.x + delta2.y * delta2.y;
-        bool isCollidingHeart2 = (dist3 <= radiusSum * radiusSum);
-
-        if (isCollidingHeart2)
+        if (isCollidingPoint2)
         {
-            float dist4 = sqrt(dist3);
+            float dist4 = sqrt(Pointdist3);
             if (dist4 == 0.0f) {
-                delta2 = { 0.0f, -1.0f };
+                Pointdelta2 = { 0.0f, -1.0f };
                 dist4 = 1.0f;
             }
-            DxPlus::Vec2 normal2 = { delta2.x / dist4, delta2.y / dist4 };
+            DxPlus::Vec2 normal2 = { Pointdelta2.x / dist4, Pointdelta2.y / dist4 };
 
-            float penetration2 = radiusSum - dist4;
+            float penetration2 = PointradiusSum - dist4;
             ballPosition = ballPosition + normal2 * penetration2;
 
             float vn2 = ballVelocity.x * normal2.x + ballVelocity.y * normal2.y;
@@ -550,103 +581,92 @@ void Game_Update()
 
                 if (!wasCollidingHeart2)
                 {
-                    if (heartType2 == 1)
-                        heartPoint += 100;
+                    if (PointType2 == 1)
+                        heartPoint += 0;
                     else
                         heartPoint += 5;
 
-                    heartType2 = rand() % 2 + 1;
+                    PointType2 = rand() % 2 + 1;
+                    PointType1 = rand() % 2 + 1;
                 }
             }
         }
-        wasCollidingHeart2 = isCollidingHeart2;*/
+        wasCollidingHeart2 = isCollidingPoint2;
+         
+         // ハートと連動する障害物
+DxPlus::Vec2 shotBalldelta = { ballPosition.x - shotBallPosition.x, ballPosition.y - shotBallPosition.y };
+float shotBalldist = shotBalldelta.x * shotBalldelta.x + shotBalldelta.y * shotBalldelta.y;
+float shotBallradiusSum = shotBallRadius + shotBallRadius;
+bool isCollidingshotBallRadius = (shotBalldist <= shotBallradiusSum * shotBallradiusSum);
+if (isCollidingshotBallRadius)
+{
+    float shotBalldist2 = sqrt(shotBalldist);
+    if (shotBalldist2 == 0.0f) {
+        shotBalldelta = { 0.0f, -1.0f };
+        shotBalldist2 = 1.0f;
+    }
+    DxPlus::Vec2 normal = { shotBalldelta.x / shotBalldist2, shotBalldelta.y / shotBalldist2 };
 
+    // めり込み解消
+    float penetration = shotBallradiusSum - shotBalldist2;
+    ballPosition = ballPosition + normal * penetration;
 
-
-
-        //　ゲームクリアに切り替え
-        if (heartPoint <= 100)
-        {
-            Scene = GameScene::GameClear;
-        }
-
-        
-
-        // ゲームオーバーに切り替え
-        if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
-        {
-            Scene = GameScene::GameOver;
-        }
+    float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
+    if (vn < 0.0f)
+    {
+        ballPosition = { 300, 440 };
+        ballVelocity = { 15.0f,-15.0f };
     }
 
+}
 
+
+        
+        //　ゲームクリアに切り替え
+       /* if (heartPoint >= 100)
+        {
+            Scene = GameScene::GameClear;
+        }*/
+        // ゲームオーバーに切り替え
+        /*if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
+        {
+            Scene = GameScene::GameOver;
+        }*/
+    }
     break;
     case GameClear:
     {
-        // 初回だけロード
-        if (seHorror == -1) {
-            seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        
+    }
+    break;
+    case GameEnd_A:
+    {
 
-        }
+    }
+    break;
+    case GameEnd_B:
+    {
 
-        // 一度だけ音を鳴らす
-        if (!soundPlayed) {
-            DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-            soundPlayed = true;
-        }
+    }
+    break;
+    case GameEnd_C:
+    {
 
-        // 暗転フェード
-        fadeCount++;
-        int alpha = (255 * fadeCount) / maxFade;
-        if (alpha > 255) alpha = 255;
-
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-        DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+    break;
+    case GameEnd_D:
+    {
 
     }
     break;
     //　ゲームオーバー画面
     case GameOver:
     {
-       
-
-        // 初回だけロード
-        if (seHorror == -1) {
-            seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/不安（ピアノ演奏）.mp3");
-           
-        }
-
-        // 一度だけ音を鳴らす
-        if (!soundPlayed) {
-            DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-            soundPlayed = true;
-        }
-
-        // 暗転フェード
-        fadeCount++;
-        int alpha = (255 * fadeCount) / maxFade;
-        if (alpha > 255) alpha = 255;
-
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-        DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
         
-        
-
-       
-
-        // 演出が終わったらタイトルへ
-        if (fadeCount > maxFade + 180) {
-            fadeCount = 0;
-            soundPlayed = false;
-            DxLib::StopSoundMem(seHorror);
-            nextScene = SceneTitle;
-        }
     }
     break;
     }
+    
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -734,21 +754,22 @@ void Game_Render()
             { objectWidth * 0.5f, objectHeight * 0.5f },
             objectAngle
         );
+        DxPlus::Primitive2D::DrawCircle(shotBallPosition, shotBallRadius, GetColor(0, 0, 255));
 
-        //ハート
+        // 障害物
         if (PointType1 == 1)
             DxPlus::Primitive2D::DrawCircle(PointPosition, PointRadius, GetColor(0, 0, 0));
         else
             DxPlus::Primitive2D::DrawCircle(PointPosition, PointRadius, GetColor(255, 0, 0));
 
-        // ハート2
+        // 障害物２
         if (PointType2 == 1)
             DxPlus::Primitive2D::DrawCircle(PointPosition2, PointRadius, GetColor(0, 0, 0));
         else
             DxPlus::Primitive2D::DrawCircle(PointPosition2, PointRadius, GetColor(255, 0, 0));
 
         DxPlus::Sprite::Draw(heartID, { 570,230 });
-        DxPlus::Primitive2D::DrawCircle(HeartPosition, HeartRadius, GetColor(0, 0, 0));
+        DxPlus::Primitive2D::DrawCircle(HeartPosition, HeartRadius, GetColor(0, 255, 0));
         if (Heart)
         {
             DxPlus::Primitive2D::DrawCircle(HeartObjectPosition, HeartRadius, GetColor(255, 0, 0));
@@ -761,6 +782,26 @@ void Game_Render()
         // 玉を描画
         DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
 
+    }
+    break;
+    case GameEnd_A:
+    {
+        DxPlus::Sprite::Draw(End_A);
+    }
+    break;
+    case GameEnd_B:
+    {
+        DxPlus::Sprite::Draw(End_B);
+    }
+    break;
+    case GameEnd_C:
+    {
+        DxPlus::Sprite::Draw(End_C);
+    }
+    break;
+    case GameEnd_D:
+    {
+        DxPlus::Sprite::Draw(End_D);
     }
     break;
     case GameClear:
@@ -793,7 +834,7 @@ void Game_Render()
         //ハート
         DxPlus::Primitive2D::DrawCircle(PointPosition, PointRadius, GetColor(0, 0, 0));
         DxPlus::Sprite::Draw(heartID, { 570,230 });
-        DxPlus::Sprite::Draw(pinBall_lafID);
+
     }
     break;
     case GameOver:
@@ -801,8 +842,8 @@ void Game_Render()
         DxPlus::Sprite::Draw(pinBall_lafID);
     }
     break;
-    }
-
+   }
+    
 }
 
 //----------------------------------------------------------------------
@@ -811,4 +852,3 @@ void Game_Render()
 void Game_End()
 {
 }
-
