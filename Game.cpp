@@ -50,7 +50,11 @@ bool CircleOBBCollision(
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
-
+static int fadeCount = 0;
+static const int maxFade = 180; // 約3秒で暗転
+static bool soundPlayed = false;
+static int seHorror = -1;
+static int flashTimer = 0;
 //ゲームシーン
 enum GameScene {
     Game,
@@ -65,17 +69,17 @@ DxPlus::Vec2 bouCenter2 = { 750,660 };
 float bouWidth = 170.0f;
 float bouHeight = 50.0f;
 float posY = 0.0f;
-float angle= 0.25f; // 入力で角度を変える用
+float angle = 0.25f; // 入力で角度を変える用
 float angle2 = -0.25f;
 // 斜めの床（バーの先に続く）
 DxPlus::Vec2 slopeCenter = { 230, 595 };  // 位置
 float slopeWidth = 600.0f;
 float slopeHeight = 60.0f;
-float slopeAngle = 0.23f;  
+float slopeAngle = 0.23f;
 DxPlus::Vec2 slopeCenter2 = { 1045, 595 };  // 位置
 float slopeWidth2 = 600.0f;
 float slopeHeight2 = 60.0f;
-float slopeAngle2 = -0.23f; 
+float slopeAngle2 = -0.23f;
 // 壁(左)
 DxPlus::Vec2 wallCenter = { 0, 300 };  // 位置
 float wallWidth = 600.0f;
@@ -90,7 +94,7 @@ float wallAngle2 = -1.6f;
 DxPlus::Vec2 wallCenter3 = { 700, 0 };  // 位置
 float wallWidth3 = 1500.0f;
 float wallHeight3 = 60.0f;
-float wallAngle3= 3.15f;
+float wallAngle3 = 3.15f;
 // 棒
 DxPlus::Vec2 objectPosition{ 200,300 };
 float objectWidth = 200.0f;
@@ -144,10 +148,10 @@ void Game_Init()
 //----------------------------------------------------------------------
 // リセット
 //----------------------------------------------------------------------
-void Game_Reset() 
-{ 
-    gameState = 0; 
-    gameFadeTimer = 1.0f; 
+void Game_Reset()
+{
+    gameState = 0;
+    gameFadeTimer = 1.0f;
 }
 
 //----------------------------------------------------------------------
@@ -155,7 +159,7 @@ void Game_Reset()
 //----------------------------------------------------------------------
 void Game_Update()
 {
-    
+
 
     switch (gameState)
     {
@@ -208,7 +212,7 @@ void Game_Update()
     prevBouPosition2 = bouCenter2;
     float penetration;
     float penetration2;
-   
+
 
     static bool wasPressed = false;  // 前フレームのAキー状態
     bool isPressed = (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_LEFT);
@@ -245,11 +249,11 @@ void Game_Update()
     //　現在のゲームシーン
     switch (Scene)
     {
-    //　ゲーム画面
+        //　ゲーム画面
     case Game:
     {
         currentTime += 1.0f / 60.0f;
-        if (currentTime >=timeLimit)
+        if (currentTime >= timeLimit)
         {
             Scene = GameScene::GameOver;
         }
@@ -439,7 +443,7 @@ void Game_Update()
                 {
                     Heart = true;
                 }
-                ballVelocity = ballVelocity - normal * (1.6f * vn); 
+                ballVelocity = ballVelocity - normal * (1.6f * vn);
             }
 
         }
@@ -470,7 +474,7 @@ void Game_Update()
                 }
                 else
                 {
-                   
+
                 }
                 ballVelocity = ballVelocity - normal2 * (1.6f * vn);
             }
@@ -481,7 +485,7 @@ void Game_Update()
         // フレーム間で当たっていたかを記録
         static bool wasCollidingHeart1 = false;
         static bool wasCollidingHeart2 = false;
-        
+
         // --- ハート1 ---
        /* DxPlus::Vec2 delta = {ballPosition.x - heartPosition.x, ballPosition.y - heartPosition.y};
         float dist2 = delta.x * delta.x + delta.y * delta.y;
@@ -559,66 +563,90 @@ void Game_Update()
 
 
 
-        
+
         //　ゲームクリアに切り替え
-        if (heartPoint >= 100)
+        if (heartPoint <= 100)
         {
             Scene = GameScene::GameClear;
         }
+
+        
+
         // ゲームオーバーに切り替え
-        /*if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
+        if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
         {
             Scene = GameScene::GameOver;
-        }*/
+        }
     }
-   
-    
+
+
     break;
     case GameClear:
     {
-        
+        // 初回だけロード
+        if (seHorror == -1) {
+            seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+
+        }
+
+        // 一度だけ音を鳴らす
+        if (!soundPlayed) {
+            DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+            soundPlayed = true;
+        }
+
+        // 暗転フェード
+        fadeCount++;
+        int alpha = (255 * fadeCount) / maxFade;
+        if (alpha > 255) alpha = 255;
+
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+        DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
     }
     break;
     //　ゲームオーバー画面
-     case GameOver:
- {
-     static int fadeCount = 0;
-     static const int maxFade = 180; // 約3秒で暗転
-     static bool soundPlayed = false;
-     static int seHorror = -1;
-    ;
+    case GameOver:
+    {
+       
 
-     // 初回だけロード
-     if (seHorror == -1) {
-         seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        // 初回だけロード
+        if (seHorror == -1) {
+            seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/不安（ピアノ演奏）.mp3");
+           
+        }
+
+        // 一度だけ音を鳴らす
+        if (!soundPlayed) {
+            DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+            soundPlayed = true;
+        }
+
+        // 暗転フェード
+        fadeCount++;
+        int alpha = (255 * fadeCount) / maxFade;
+        if (alpha > 255) alpha = 255;
+
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+        DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
         
-     }
+        
 
-     // 一度だけ音を鳴らす
-     if (!soundPlayed) {
-         DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-         soundPlayed = true;
-     }
+       
 
-     // 暗転フェード
-     fadeCount++;
-     int alpha = (255 * fadeCount) / maxFade;
-     if (alpha > 255) alpha = 255;
-
-     DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-     DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
-     DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-     // 演出が終わったらタイトルへ
-     if (fadeCount > maxFade + 180) {
-         fadeCount = 0;
-         soundPlayed = false;
-         DxLib::StopSoundMem(seHorror);
-         nextScene = SceneTitle;
-     }
- }
- break;
- }
+        // 演出が終わったらタイトルへ
+        if (fadeCount > maxFade + 180) {
+            fadeCount = 0;
+            soundPlayed = false;
+            DxLib::StopSoundMem(seHorror);
+            nextScene = SceneTitle;
+        }
+    }
+    break;
+    }
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -765,7 +793,7 @@ void Game_Render()
         //ハート
         DxPlus::Primitive2D::DrawCircle(PointPosition, PointRadius, GetColor(0, 0, 0));
         DxPlus::Sprite::Draw(heartID, { 570,230 });
-
+        DxPlus::Sprite::Draw(pinBall_lafID);
     }
     break;
     case GameOver:
@@ -773,8 +801,8 @@ void Game_Render()
         DxPlus::Sprite::Draw(pinBall_lafID);
     }
     break;
-   }
-    
+    }
+
 }
 
 //----------------------------------------------------------------------
