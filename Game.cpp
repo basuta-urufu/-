@@ -580,13 +580,45 @@ void Game_Update()
     }
     break;
     //　ゲームオーバー画面
-    case GameOver:
-    {
+     case GameOver:
+ {
+     static int fadeCount = 0;
+     static const int maxFade = 180; // 約3秒で暗転
+     static bool soundPlayed = false;
+     static int seHorror = -1;
+    ;
+
+     // 初回だけロード
+     if (seHorror == -1) {
+         seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
         
-    }
-    break;
-    }
-    
+     }
+
+     // 一度だけ音を鳴らす
+     if (!soundPlayed) {
+         DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+         soundPlayed = true;
+     }
+
+     // 暗転フェード
+     fadeCount++;
+     int alpha = (255 * fadeCount) / maxFade;
+     if (alpha > 255) alpha = 255;
+
+     DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+     DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
+     DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+     // 演出が終わったらタイトルへ
+     if (fadeCount > maxFade + 180) {
+         fadeCount = 0;
+         soundPlayed = false;
+         DxLib::StopSoundMem(seHorror);
+         nextScene = SceneTitle;
+     }
+ }
+ break;
+ }
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -751,3 +783,4 @@ void Game_Render()
 void Game_End()
 {
 }
+
