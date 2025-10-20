@@ -51,7 +51,16 @@ bool CircleOBBCollision(
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
-
+static int fadeCount = 0;
+static const int maxFade = 180; // 約3秒で暗転
+static bool soundPlayed = false;
+static int seHorror = -1;
+static int timer = 0;
+static int state = 0; // 0=暗転, 1=背景表示, 2=フェードアウ
+int seHit = -1;
+int seHit2 = -1;
+int seHit3;
+int bgm;
 //ゲームシーン
 enum GameScene {
     Game,
@@ -139,23 +148,57 @@ float timeLimit = 999.0f; // 60秒制限
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
+// ---------------------------------------------------------
+// 汎用フェードアウト処理
+// ---------------------------------------------------------
+bool DoFadeOut()
+{
+    static int fadeCount = 0;
+    static const int maxFade = 180; // 約3秒
+    fadeCount++;
+
+    int alpha = (255 * fadeCount) / maxFade;
+    if (alpha > 255) alpha = 255;
+
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+    DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // フェードが完了したら true を返す
+    if (fadeCount >= maxFade) {
+        fadeCount = 0;
+        return true;
+    }
+    return false;
+}
 //----------------------------------------------------------------------
 // 初期設定
 //----------------------------------------------------------------------
 void Game_Init()
 {
     DxLib::SetBackgroundColor(0, 128, 255);
-    Scene = Game;
-    pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
-    End_A= DxPlus::Sprite::Load(L"./Data/Images/Background1_Hole.png");
-    End_B= DxPlus::Sprite::Load(L"./Data/Images/back.png");
-    End_C= DxPlus::Sprite::Load(L"./Data/Images/Background2.png");
-    End_D= DxPlus::Sprite::Load(L"./Data/Images/space.png");
-    heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
-    srand((unsigned int)time(NULL));  // 乱数の初期化
-    PointType1 = rand() % 2 + 1;
-    PointType2 = rand() % 2 + 1;
-    Game_Reset();
+  Scene = Game;
+  pinBall_lafID = DxPlus::Sprite::Load(L"./Data/Images/pinBall_laf.png");
+  End_A = DxPlus::Sprite::Load(L"./Data/Images/Background1_Hole.png");
+  End_B = DxPlus::Sprite::Load(L"./Data/Images/back.png");
+  End_C = DxPlus::Sprite::Load(L"./Data/Images/Background2.png");
+  End_D = DxPlus::Sprite::Load(L"./Data/Images/space.png");
+  heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
+  seHit = DxLib::LoadSoundMem(L"./Data/Sounds/Explosion.mp3");
+  seHit2 = DxLib::LoadSoundMem(L"./Data/Sounds/PlayerShot.wav");
+    //seHit3= DxLib::LoadSoundMem(L"./Data/Sounds/");
+  bgm = LoadSoundMem(L"./Data/Sounds/可愛いｂｇｍ.mp3");
+
+
+  srand((unsigned int)time(NULL));  // 乱数の初期化
+  PointType1 = rand() % 2 + 1;
+  PointType2 = rand() % 2 + 1;
+  state = 0;
+  fadeCount = 0;
+  timer = 0;
+  soundPlayed = false;
+
+  Game_Reset();
 }
 
 //----------------------------------------------------------------------
@@ -300,7 +343,7 @@ void Game_Update()
             {
                 // --- 強制的に飛ばす ---
                 DxPlus::Vec2 tangent = { -normal.y, normal.x };
-
+                DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
                 // ヒット位置によって方向をずらす
                 float c = cos(-angle);
                 float s = sin(-angle);
@@ -336,7 +379,7 @@ void Game_Update()
             if (pressedNow2 && vn2 < 0)
             {
                 DxPlus::Vec2 tangent2 = { -normal2.y, normal2.x };
-
+                DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
                 // --- ローカル座標に変換 ---
                 float c2 = cos(-angle2);
                 float s2 = sin(-angle2);
@@ -383,6 +426,7 @@ void Game_Update()
         float slopePenetration2;
         if (CircleOBBCollision(ballPosition, ballRadius, slopeCenter2, slopeWidth2, slopeHeight2, slopeAngle2, slopeNormal2, slopePenetration2))
         {
+            // DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
             ballPosition = ballPosition + slopeNormal2 * slopePenetration2;
 
             float vn2 = ballVelocity.x * slopeNormal2.x + ballVelocity.y * slopeNormal2.y;
@@ -398,6 +442,7 @@ void Game_Update()
         float wallPenetration;
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter, wallWidth, wallHeight, wallAngle, wallNormal, wallPenetration))
         {
+            //DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
             ballPosition = ballPosition + wallNormal * wallPenetration;
 
             float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
@@ -410,6 +455,7 @@ void Game_Update()
         //　壁の当たり判定（右）
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter2, wallWidth2, wallHeight2, wallAngle2, wallNormal, wallPenetration))
         {
+            //DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
             ballPosition = ballPosition + wallNormal * wallPenetration;
 
             float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
@@ -422,6 +468,7 @@ void Game_Update()
         //　天井の当たり判定
         if (CircleOBBCollision(ballPosition, ballRadius, wallCenter3, wallWidth3, wallHeight3, wallAngle3, wallNormal, wallPenetration))
         {
+            //DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);
             ballPosition = ballPosition + wallNormal * wallPenetration;
 
             float vn = ballVelocity.x * wallNormal.x + ballVelocity.y * wallNormal.y;
@@ -450,6 +497,7 @@ void Game_Update()
         bool isCollidingHeart1 = (dist <= radiusSum * radiusSum);
         if (isCollidingHeart1)
         {
+            DxLib::PlaySoundMem(seHit2, DX_PLAYTYPE_BACK);
             float dist2 = sqrt(dist);
             if (dist2 == 0.0f) {
                 delta = { 0.0f, -1.0f };
@@ -484,6 +532,7 @@ void Game_Update()
         bool isCollidingHeart = (dist3 <= radiusSum2 * radiusSum2);
         if (isCollidingHeart)
         {
+            DxLib::PlaySoundMem(seHit2, DX_PLAYTYPE_BACK);
             float dist4 = sqrt(dist3);
             if (dist4 == 0.0f) {
                 delta2 = { 0.0f, -1.0f };
@@ -524,6 +573,7 @@ void Game_Update()
 
         if (isCollidingPoint1)
         {
+            DxLib::PlaySoundMem(seHit2, DX_PLAYTYPE_BACK);
             float dist = sqrt(dist2);
             if (dist == 0.0f) {
                 Pointdelta = { 0.0f, -1.0f };
@@ -563,6 +613,7 @@ void Game_Update()
 
         if (isCollidingPoint2)
         {
+            DxLib::PlaySoundMem(seHit2, DX_PLAYTYPE_BACK);
             float dist4 = sqrt(Pointdist3);
             if (dist4 == 0.0f) {
                 Pointdelta2 = { 0.0f, -1.0f };
@@ -600,6 +651,7 @@ float shotBallradiusSum = shotBallRadius + shotBallRadius;
 bool isCollidingshotBallRadius = (shotBalldist <= shotBallradiusSum * shotBallradiusSum);
 if (isCollidingshotBallRadius)
 {
+    //DxLib::PlaySoundMem(seHit, DX_PLAYTYPE_BACK);  これはワープしなくても開始地点と同じだから音が鳴ります
     float shotBalldist2 = sqrt(shotBalldist);
     if (shotBalldist2 == 0.0f) {
         shotBalldelta = { 0.0f, -1.0f };
@@ -616,6 +668,7 @@ if (isCollidingshotBallRadius)
     {
         ballPosition = { 300, 440 };
         ballVelocity = { 15.0f,-15.0f };
+          
     }
 
 }
@@ -627,46 +680,80 @@ if (isCollidingshotBallRadius)
         {
             Scene = GameScene::GameClear;
         }*/
-        // ゲームオーバーに切り替え
-        /*if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
+         //ゲームオーバーに切り替え
+        if (ballPosition.y > DxPlus::CLIENT_HEIGHT)
         {
             Scene = GameScene::GameOver;
-        }*/
+        }
     }
     break;
-    case GameClear:
+   case GameClear:{
+    if (!soundPlayed)
     {
-        
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
-    break;
-    case GameEnd_A:
+}
+case GameEnd_A:{
+    if (!soundPlayed)
     {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+}
+case GameEnd_B:{
+    if (!soundPlayed)
+    {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+}
+case GameEnd_C:{
+    if (!soundPlayed)
+    {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+}
+case GameEnd_D:{
+    if (!soundPlayed)
+    {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+}
+case GameOver:{
+    if (!soundPlayed)
+    {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+}
+{
+    // 音を一度だけ鳴らす
+    if (!soundPlayed)
+    {
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
 
-    }
-    break;
-    case GameEnd_B:
+    // フェードアウト実行（true で完了）
+    if (DoFadeOut())
     {
-
+        soundPlayed = false;
+        seHorror = -1;
+        nextScene = SceneTitle;  // タイトルなど次のシーンへ遷移
     }
-    break;
-    case GameEnd_C:
-    {
-
-    }
-    break;
-    case GameEnd_D:
-    {
-
-    }
-    break;
-    //　ゲームオーバー画面
-    case GameOver:
-    {
-        
-    }
-    break;
-    }
-    
+}
+break;
+}
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -851,4 +938,9 @@ void Game_Render()
 //----------------------------------------------------------------------
 void Game_End()
 {
+     if (CheckSoundMem(bgm) == TRUE)
+ {
+     StopSoundMem(bgm);
+ }
 }
+
