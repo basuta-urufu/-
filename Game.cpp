@@ -224,6 +224,8 @@ void Game_Update()
         if (gameFadeTimer < 0.0f) {
             gameFadeTimer = 0.0f;
             gameState++;
+            PlaySoundMem(bgm, DX_PLAYTYPE_LOOP, TRUE);
+ChangeVolumeSoundMem(200, bgm);
         }
         break;
 
@@ -943,4 +945,5 @@ void Game_End()
      StopSoundMem(bgm);
  }
 }
+
 
