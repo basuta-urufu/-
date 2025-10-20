@@ -3,77 +3,83 @@
 #include "WinMain.h"
 
 //----------------------------------------------------------------------
-// ’è”
+// å®šæ•°
 //----------------------------------------------------------------------
-
+int bgm3;
 //----------------------------------------------------------------------
-// •Ï”
+// å¤‰æ•°
 //----------------------------------------------------------------------
-// ƒtƒŒ[ƒ€ƒJƒEƒ“ƒg—p•Ï”
+// ãƒ•ãƒ¬ãƒ¼ãƒ ã‚«ã‚¦ãƒ³ãƒˆç”¨å¤‰æ•°
 int frameCount;
 
-// nextScene‚ÌexternéŒ¾
+// nextSceneã®externå®£è¨€
 extern int nextScene;
 
-//‡@ ƒ^ƒCƒgƒ‹’†‚Ìó‘Ô
+//â‘  ã‚¿ã‚¤ãƒˆãƒ«ä¸­ã®çŠ¶æ…‹
 int titleState;
-//‡A ƒtƒF[ƒhƒCƒ“ / ƒAƒEƒg—p•Ï”
+//â‘¡ ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ / ã‚¢ã‚¦ãƒˆç”¨å¤‰æ•°
 float titleFadeTimer;
 
 //----------------------------------------------------------------------
-// ‰Šúİ’è
+// åˆæœŸè¨­å®š
 //----------------------------------------------------------------------
 void Title_Init()
 {
     DxLib::SetBackgroundColor(255, 128, 0);
+    bgm3 = LoadSoundMem(L"./Data/Sounds/ä¸å®‰ï¼ˆãƒ”ã‚¢ãƒæ¼”å¥ï¼‰.mp3");
+   
 
     Title_Reset();
 }
 
 //----------------------------------------------------------------------
-// ƒŠƒZƒbƒg
+// ãƒªã‚»ãƒƒãƒˆ
 //----------------------------------------------------------------------
 void Title_Reset()
 {
     frameCount = 0;
 
-    //‡B •Ï”‚Ì‰Šúİ’è
+    //â‘¢ å¤‰æ•°ã®åˆæœŸè¨­å®š
     titleState = 0;
     titleFadeTimer = 1.0f;
 }
 
 //----------------------------------------------------------------------
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 //----------------------------------------------------------------------
 void Title_Update()
 {
-    //‡C titleState‚É‚æ‚é•ªŠò
+    //â‘£ titleStateã«ã‚ˆã‚‹åˆ†å²
     switch (titleState)
     {
-    case 0: // ƒtƒF[ƒhƒCƒ“’†
+    case 0: // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ä¸­
     {
         titleFadeTimer -= 1 / 60.0f;
         if (titleFadeTimer < 0.0f)
         {
+           
             titleFadeTimer = 0.0f;
             titleState++;
+            PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            ChangeVolumeSoundMem(200, bgm3);
         }
         break;
     }
 
-    case 1: // ’Êí
+    case 1: // é€šå¸¸æ™‚
     {
-        // EnterƒL[‚ÅGameƒV[ƒ“‚Ö
+        // Enterã‚­ãƒ¼ã§Gameã‚·ãƒ¼ãƒ³ã¸
         int input = DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1);
         if (input & DxPlus::Input::BUTTON_START)
         {
             titleState++;
+
         }
 
         break;
     }
 
-    case 2: // ƒtƒF[ƒhƒAƒEƒg’†
+    case 2: // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆä¸­
     {
         titleFadeTimer += 1 / 60.0f;
         if (titleFadeTimer > 1.0f)
@@ -90,17 +96,17 @@ void Title_Update()
 }
 
 //----------------------------------------------------------------------
-// •`‰æˆ—
+// æç”»å‡¦ç†
 //----------------------------------------------------------------------
 void Title_Render()
 {
-    // ƒ^ƒCƒgƒ‹‚Ì•`‰æ
+    // ã‚¿ã‚¤ãƒˆãƒ«ã®æç”»
     DxPlus::Text::DrawString(L"2D GameProgramming I",
         { DxPlus::CLIENT_WIDTH * 0.5f, DxPlus::CLIENT_HEIGHT * 0.33f },
         DxLib::GetColor(255, 255, 255), DxPlus::Text::TextAlign::MIDDLE_CENTER,
         { 3.0f, 3.0f });
 
-    // Push Enter‚Ì“_–Å
+    // Push Enterã®ç‚¹æ»…
     if (frameCount & 0x20)
     {
         DxPlus::Text::DrawString(L"Push Enter",
@@ -109,7 +115,7 @@ void Title_Render()
             { 2.0f, 2.0f });
     }
 
-    //‡D ƒtƒF[ƒhƒCƒ“ / ƒtƒF[ƒhƒAƒEƒg—p
+    //â‘¤ ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ / ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆç”¨
     if (titleFadeTimer > 0.0f)
     {
         DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(255 * titleFadeTimer));
@@ -120,8 +126,13 @@ void Title_Render()
 }
 
 //----------------------------------------------------------------------
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 //----------------------------------------------------------------------
 void Title_End()
 {
+    if (CheckSoundMem(bgm3) == TRUE)
+    {
+        StopSoundMem(bgm3);
+    }
 }
+
