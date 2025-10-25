@@ -5,19 +5,22 @@
 //----------------------------------------------------------------------
 // 定数
 //----------------------------------------------------------------------
-int bgm3;
+
 //----------------------------------------------------------------------
 // 変数
 //----------------------------------------------------------------------
 // フレームカウント用変数
 int frameCount;
-
+//BGM
+extern int bgm3;
 // nextSceneのextern宣言
 extern int nextScene;
 
-//① タイトル中の状態
+// タイトル中の状態
 int titleState;
-//② フェードイン / アウト用変数
+// セレクト
+int selectedIndex = 0;
+// フェードイン / アウト用変数
 float titleFadeTimer;
 
 //----------------------------------------------------------------------
@@ -26,9 +29,6 @@ float titleFadeTimer;
 void Title_Init()
 {
     DxLib::SetBackgroundColor(255, 128, 0);
-    bgm3 = LoadSoundMem(L"./Data/Sounds/不安（ピアノ演奏）.mp3");
-   
-
     Title_Reset();
 }
 
@@ -39,7 +39,7 @@ void Title_Reset()
 {
     frameCount = 0;
 
-    //③ 変数の初期設定
+    // 変数の初期設定
     titleState = 0;
     titleFadeTimer = 1.0f;
 }
@@ -49,31 +49,63 @@ void Title_Reset()
 //----------------------------------------------------------------------
 void Title_Update()
 {
-    //④ titleStateによる分岐
+    // titleStateによる分岐
     switch (titleState)
     {
+        if (CheckSoundMem(bgm3) == FALSE) 
+        { 
+            StopSoundMem(bgm3);
+        }
     case 0: // フェードイン中
     {
         titleFadeTimer -= 1 / 60.0f;
         if (titleFadeTimer < 0.0f)
         {
-           
             titleFadeTimer = 0.0f;
             titleState++;
-            PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            ChangeVolumeSoundMem(200, bgm3);
+            
+
         }
         break;
     }
 
     case 1: // 通常時
     {
-        // EnterキーでGameシーンへ
+        
         int input = DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1);
-        if (input & DxPlus::Input::BUTTON_START)
+        if (input & DxPlus::Input::BUTTON_RIGHT)
         {
-            titleState++;
+            selectedIndex++;
+            if (selectedIndex > 1)
+            {
+                selectedIndex = 1;
+            }
+        }
+        if (input & DxPlus::Input::BUTTON_LEFT)
+        {
+            selectedIndex--;
+            if (selectedIndex <-2)
+            {
+                selectedIndex = -2;
+            }
 
+        }
+        if (input & DxPlus::Input::BUTTON_START && selectedIndex == -2)
+        {
+            exit(0);
+        }
+        if (input & DxPlus::Input::BUTTON_START && selectedIndex == -1)
+        {
+            nextScene = SceneRule;
+        }
+        if (input & DxPlus::Input::BUTTON_START&&selectedIndex==0)
+        {
+            StopSoundMem(bgm3);
+            nextScene = SceneGame;
+        }
+        if (input & DxPlus::Input::BUTTON_START && selectedIndex == 1)
+        {
+            nextScene= SceneGallery;
         }
 
         break;
@@ -101,21 +133,67 @@ void Title_Update()
 void Title_Render()
 {
     // タイトルの描画
-    DxPlus::Text::DrawString(L"2D GameProgramming I",
+    DxPlus::Text::DrawString(L"落とせ地雷ちゃん",
         { DxPlus::CLIENT_WIDTH * 0.5f, DxPlus::CLIENT_HEIGHT * 0.33f },
         DxLib::GetColor(255, 255, 255), DxPlus::Text::TextAlign::MIDDLE_CENTER,
         { 3.0f, 3.0f });
-
-    // Push Enterの点滅
-    if (frameCount & 0x20)
-    {
-        DxPlus::Text::DrawString(L"Push Enter",
-            { DxPlus::CLIENT_WIDTH * 0.5f, DxPlus::CLIENT_HEIGHT * 0.75f },
-            DxLib::GetColor(255, 255, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
-            { 2.0f, 2.0f });
+    if (selectedIndex == -2) {
+        if (frameCount & 0x20)
+        {
+            DxPlus::Text::DrawString(L"EXIT",
+                { DxPlus::CLIENT_WIDTH * 0.15f, DxPlus::CLIENT_HEIGHT * 0.75f },
+                DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+                { 2.0f, 2.0f });
+        }
     }
-
-    //⑤ フェードイン / フェードアウト用
+    else
+        DxPlus::Text::DrawString(L"EXIT",
+            { DxPlus::CLIENT_WIDTH * 0.15f, DxPlus::CLIENT_HEIGHT * 0.75f },
+            DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+            { 2.0f, 2.0f });
+    if (selectedIndex == -1) {
+        if (frameCount & 0x20)
+        {
+            DxPlus::Text::DrawString(L"ルール",
+                { DxPlus::CLIENT_WIDTH * 0.35f, DxPlus::CLIENT_HEIGHT * 0.75f },
+                DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+                { 2.0f, 2.0f });
+        }
+    }
+    else
+        DxPlus::Text::DrawString(L"ルール",
+            { DxPlus::CLIENT_WIDTH * 0.35f, DxPlus::CLIENT_HEIGHT * 0.75f },
+            DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+            { 2.0f, 2.0f });
+    if (selectedIndex == 0) {
+        if (frameCount & 0x20)
+        {
+            DxPlus::Text::DrawString(L"START",
+                { DxPlus::CLIENT_WIDTH * 0.55f, DxPlus::CLIENT_HEIGHT * 0.75f },
+                DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+                { 2.0f, 2.0f });
+        }
+    }
+    else
+        DxPlus::Text::DrawString(L"START",
+            { DxPlus::CLIENT_WIDTH * 0.55f, DxPlus::CLIENT_HEIGHT * 0.75f },
+            DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+            { 2.0f, 2.0f });
+    if (selectedIndex == 1) {
+        if (frameCount & 0x20)
+        {
+            DxPlus::Text::DrawString(L"ギャラリー",
+                { DxPlus::CLIENT_WIDTH * 0.80f, DxPlus::CLIENT_HEIGHT * 0.75f },
+                DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+                { 2.0f, 2.0f });
+        }
+    }
+    else
+        DxPlus::Text::DrawString(L"ギャラリー",
+            { DxPlus::CLIENT_WIDTH * 0.80f, DxPlus::CLIENT_HEIGHT * 0.75f },
+            DxLib::GetColor(0, 0, 0), DxPlus::Text::TextAlign::MIDDLE_CENTER,
+            { 2.0f, 2.0f });
+    
     if (titleFadeTimer > 0.0f)
     {
         DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(255 * titleFadeTimer));
@@ -130,9 +208,5 @@ void Title_Render()
 //----------------------------------------------------------------------
 void Title_End()
 {
-    if (CheckSoundMem(bgm3) == TRUE)
-    {
-        StopSoundMem(bgm3);
-    }
+    
 }
-
