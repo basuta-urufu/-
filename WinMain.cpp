@@ -2,33 +2,46 @@
 #include"WinMain.h"
 #include"Title.h"
 #include"Game.h"
-
+#include"Rule.h"
 int currentScene = SceneNone;
 int nextScene = SceneTitle;
 
+int bgm3;
+// ãƒ•ã‚©ãƒ³ãƒˆ
+int fontID1 = -1;
+int fontID2 = -1;
 //------------------------------------------------------
-//ƒvƒƒgƒ^ƒCƒvéŒ¾
+//ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
 //------------------------------------------------------
 static LRESULT CALLBACK CustomWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //------------------------------------------------------
-//wWinMainŠÖ”
+//wWinMainé–¢æ•°
 //------------------------------------------------------
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 {
-	//DxPlus(Dxƒ‰ƒCƒuƒ‰ƒŠ)‚Ì‰Šú‰»
-	constexpr bool WINDOWED = TRUE;//ƒEƒBƒ“ƒhƒEƒ‚[ƒh
+	//DxPlus(Dxãƒ©ã‚¤ãƒ–ãƒ©ãƒª)ã®åˆæœŸåŒ–
+	constexpr bool WINDOWED = TRUE;//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ¢ãƒ¼ãƒ‰
 	if (DxPlus::Initialize(DxPlus::CLIENT_WIDTH, DxPlus::CLIENT_HEIGHT, WINDOWED) == -1)
 	{
-		return -1; //‰Šú‰»¸”s
+		return -1; //åˆæœŸåŒ–å¤±æ•—
 	}
 
-	//ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ‚ğİ’è
+	//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£ã‚’è¨­å®š
 	DxLib::SetHookWinProc(CustomWinProc);
-
+	bgm3 = LoadSoundMem(L"./Data/Sounds/BGM.wav");
+	PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE); 
 	//Game_Init();
-
-	//ƒQ[ƒ€ƒ‹[ƒv
+	if (AddFontResourceExW(L"./Data/Fonts/Belleza/Belleza-Regular.ttf", FR_PRIVATE, 0) == 0)
+	{
+		DxPlus::Utils::FatalError(L"Failed to add font: ./Data/Fonts/Belleza/Belleza - Regular.ttf");
+	}
+	fontID1 = DxPlus::Text::InitializeFont(L"Yusei Magic", 25, 5);
+	if (fontID1 == -1)
+	{
+		DxPlus::Utils::FatalError(L"Failed to add font: ./Data/Fonts/Belleza/Belleza-Regular.ttf");
+	}
+	//ã‚²ãƒ¼ãƒ ãƒ«ãƒ¼ãƒ—
 	while (DxPlus::GameLoop())
 	{
 		if (nextScene != SceneNone)
@@ -38,7 +51,9 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 			case SceneTitle:
 				Title_End();
 				break;
-
+			case SceneRule:
+				Rule_End();
+				break;
 			case SceneGame:
 				Game_End();
 				break;
@@ -49,7 +64,9 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 			case SceneTitle:
 				Title_Init();
 				break;
-
+			case SceneRule:
+				Rule_Init();
+				break;
 			case SceneGame:
 				Game_Init();
 				break;
@@ -59,7 +76,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 			nextScene = SceneNone;
 		}
 
-		//“ü—Í‚Ìó‘Ô‚ğXV‚·‚é
+		//å…¥åŠ›ã®çŠ¶æ…‹ã‚’æ›´æ–°ã™ã‚‹
 		DxPlus::Input::Update();
 
 		switch (currentScene)
@@ -68,17 +85,20 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 			Title_Update();
 			Title_Render();
 			break;
-
+		case SceneRule:
+			Rule_Update();
+			Rule_Render();
+			break;
 		case SceneGame:
 			Game_Update();
 			Game_Render();
 			break;
 		}
 
-		//ƒfƒoƒbƒNî•ñ‚ğ•`‰æ‚·‚é
+		//ãƒ‡ãƒãƒƒã‚¯æƒ…å ±ã‚’æç”»ã™ã‚‹
 		DxPlus::Debug::Draw();
 
-		//‰æ–Ê‚ğƒNƒŠƒA‚·‚é
+		//ç”»é¢ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
 		DxLib::ScreenFlip();
 		DxLib::ClearDrawScreen();
 
@@ -89,16 +109,18 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 	case SceneTitle:
 		Title_End();
 		break;
-
+	case SceneRule:
+		Rule_End();
+		break;
 	case SceneGame:
 		Game_End();
 		break;
 	}
 
-	//DxPlus‚ÌI—¹ˆ—
+	//DxPlusã®çµ‚äº†å‡¦ç†
 	DxPlus::ShutDown();
 
-	//–ß‚è’l‚Í0‚Å‚æ‚¢
+	//æˆ»ã‚Šå€¤ã¯0ã§ã‚ˆã„
 	return 0;
 	while (DxPlus::GameLoop())
 	{
