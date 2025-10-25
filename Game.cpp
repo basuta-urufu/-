@@ -175,6 +175,31 @@ float timeLimit = 60.0f; // 60秒制限
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
+// ---------------------------------------------------------
+// 汎用フェードアウト処理
+// ---------------------------------------------------------
+bool DoFadeOut()
+{
+    static int localFadeCount = 0;
+    static const int localMaxFade = 180;
+    localFadeCount++;
+
+    int alpha = (255 * localFadeCount) / localMaxFade;
+    if (alpha > 255) alpha = 255;
+
+    // 徐々に黒を重ねていく
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+    DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    if (localFadeCount >= localMaxFade)
+    {
+        localFadeCount = 0;
+        return true;
+    }
+
+    return false;
+}
 //----------------------------------------------------------------------
 // 初期設定
 //----------------------------------------------------------------------
@@ -369,15 +394,29 @@ void Game_Update()
         {
             if (heartPoint <= 0)
             {
-                Scene = GameScene::GameEnd_A;
+              gameFadeTimer += 1 / 60.0f;
+             if (gameFadeTimer > 1.0f) {
+             gameFadeTimer = 1.0f;
+    
+          Scene = GameScene::GameEnd_A;
+        }
             }
             else if (heartPoint<=49)
             {
-                Scene = GameScene::GameEnd_B;
+               gameFadeTimer += 1 / 60.0f;
+ if (gameFadeTimer > 1.0f) {
+     gameFadeTimer = 1.0f;
+     Scene = GameScene::GameEnd_B;
+ }
             }
             else if (heartPoint <= 99)
             {
-                Scene = GameScene::GameEnd_C;
+              gameFadeTimer += 1 / 60.0f;
+ if (gameFadeTimer > 1.0f) {
+     gameFadeTimer = 1.0f;
+     
+     Scene = GameScene::GameEnd_C;
+ }
             }
             else if (heartPoint >= 100)
             {
@@ -1218,7 +1257,28 @@ void Game_Render()
             // 玉を描画
             DxPlus::Primitive2D::DrawCircle({ 1150, 400 }, ballRadius, GetColor(0, 0, 0));
 
-        
+           if (gameFadeTimer > 0.0f)
+   {
+       // α値を算出（0～255）
+       int alpha = (int)(255 * gameFadeTimer);
+       if (alpha > 255) alpha = 255;
+
+       // --- 描画をすべて隠す（黒フェード） ---
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+       DxPlus::Primitive2D::DrawRect(
+           { 0, 0 },
+           { DxPlus::CLIENT_WIDTH, DxPlus::CLIENT_HEIGHT },
+           DxLib::GetColor(0, 0, 0)
+       );
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+   }
+
+   // --- 完全にフェードアウトしたら描画しない ---
+   if (gameFadeTimer >= 1.0f)
+   {
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+       return; // ← 全ての描画をスキップ
+   }
     }
     break;
     
@@ -1532,6 +1592,7 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
 
