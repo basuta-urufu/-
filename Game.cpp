@@ -175,34 +175,13 @@ float timeLimit = 60.0f; // 60秒制限
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
-// ---------------------------------------------------------
-// 汎用フェードアウト処理
-// ---------------------------------------------------------
-bool DoFadeOut()
+
+void ChangeScene(GameScene newScene)
 {
-    static int localFadeCount = 0;
-    static const int localMaxFade = 180;
-    localFadeCount++;
+    Scene = newScene;
+    flashAlpha = 1.0f; // シーン切り替え時に必ずフラッシュ！
 
-    int alpha = (255 * localFadeCount) / localMaxFade;
-    if (alpha > 255) alpha = 255;
-
-    // 徐々に黒を重ねていく
-    DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-    DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(0, 0, 0), TRUE);
-    DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-    if (localFadeCount >= localMaxFade)
-    {
-        localFadeCount = 0;
-        return true;
-    }
-
-    return false;
 }
-
-
-
 //----------------------------------------------------------------------
 // 初期設定
 //----------------------------------------------------------------------
@@ -266,7 +245,11 @@ void Game_Reset()
 //----------------------------------------------------------------------
 void Game_Update()
 {
-
+if (flashAlpha > 0.0f)
+{
+	flashAlpha -= 0.05f; // 20フレームくらいで消える
+	if (flashAlpha < 0.0f) flashAlpha = 0.0f;
+}
 
 
     switch (gameState)
@@ -1009,24 +992,12 @@ case GameOver:
     Game_Reset();
 }
 
+if (flashAlpha > 0.0f)
 {
-    // 音を一度だけ鳴らす
-    if (!soundPlayed)
-    {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
-    }
-
-    // フェードアウト実行（true で完了）
-    if (DoFadeOut())
-    {
-        soundPlayed = false;
-        seHorror = -1;
-        nextScene = SceneTitle;  // タイトルなど次のシーンへ遷移
-    }
-}
-break;
+	int alpha = static_cast<int>(flashAlpha * 255);
+	DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+	DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(255, 255, 255), TRUE);
+	DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 }
 //----------------------------------------------------------------------
@@ -1598,5 +1569,6 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
