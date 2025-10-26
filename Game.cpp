@@ -362,6 +362,7 @@ if (flashAlpha > 0.0f)
     //　ゲーム画面
     case Game:
     {
+		flashcounter = 0;
         currentTime += 1.0f / 60.0f;
         // エンディング
         if (heartPoint <= -50)
@@ -1569,6 +1570,7 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
 
