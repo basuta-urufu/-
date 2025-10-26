@@ -1510,7 +1510,7 @@ void Game_Render()
     }
     break;
     }
-    break;
+    
     case GameEnd_A:
     {
         DxPlus::Sprite::Draw(EndIDs[1]);
@@ -1561,6 +1561,7 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
 
