@@ -932,133 +932,102 @@ void Game_Update()
         }
     }
     break;
-    case GameClear:
+   case GameClear:
+{
+    if (!soundPlayed)
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
     break;
-    case GameEnd_A:
+    Game_Reset();
+}
+case GameEnd_A:
+{
+    if (!soundPlayed)
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            soundPlayed = false;
-            seHorror = -1;
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
     break;
-    case GameEnd_B:
+    Game_Reset();
+}
+break;
+case GameEnd_B:
+{
+    if (!soundPlayed)
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
     break;
-    case GameEnd_C:
+    Game_Reset();
+}
+case GameEnd_C:
+{
+    if (!soundPlayed)
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
     break;
-    case GameEnd_D:
+    Game_Reset();
+}
+case GameEnd_D: {
+    if (!soundPlayed) 
+    { seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK); 
+    soundPlayed = true; } 
+    break; 
+    Game_Reset();
+}
+case GameEnd_E:
+{
+    if (!soundPlayed)
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
     break;
-    case GameEnd_E:
+    Game_Reset();
+}
+//　ゲームオーバー画面
+case GameOver:
+{
+    if (!soundPlayed)
     {
-        DxLib::SetBackgroundColor(0, 0, 0);
-        StopSoundMem(bgm);
-        polisPosition.x -= 10;
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
+    }
+    break;
+    Game_Reset();
+}
 
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START && polisPosition.x < 0)
-        {
-            nextScene = SceneTitle;
-            StopSoundMem(polisSE);
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
-
-    }
-    break;
-    //　ゲームオーバー画面
-    case GameOver:
+{
+    // 音を一度だけ鳴らす
+    if (!soundPlayed)
     {
-
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+        soundPlayed = true;
     }
-    break;
 
+    // フェードアウト実行（true で完了）
+    if (DoFadeOut())
     {
-        // 音を一度だけ鳴らす
-        if (!soundPlayed)
-        {
-            seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-            DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-            soundPlayed = true;
-        }
-
-        // フェードアウト実行（true で完了）
-        if (DoFadeOut())
-        {
-            soundPlayed = false;
-            seHorror = -1;
-            nextScene = SceneTitle;  // タイトルなど次のシーンへ遷移
-        }
+        soundPlayed = false;
+        seHorror = -1;
+        nextScene = SceneTitle;  // タイトルなど次のシーンへ遷移
     }
-    break;
-    }
+}
+break;
+}
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -1629,4 +1598,5 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
