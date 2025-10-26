@@ -378,52 +378,44 @@ void Game_Update()
     {
        
         // エンディング
-        if (heartPoint <= -50)
-        {
-            DxLib::PlaySoundMem(polisSE, DX_PLAYTYPE_BACK);
-            Scene = GameScene::GameEnd_E;
-       }
-        else if (heartPoint >= 200)
-        {
-            Scene = GameScene::GameEnd_F;
+      currentTime += 1.0f / 60.0f;
+if (currentTime >= timeLimit)
+{
+    if (heartPoint <= 0)
+    {
+        gameFadeTimer += 1 / 60.0f;
+        if (gameFadeTimer > 1.0f) {
+            gameFadeTimer = 1.0f;
+           
+            Scene = GameScene::GameEnd_A;
         }
-        timeLimit-= 1.0f / 60.0f;
-        
-        f++;
-        if (0 >=timeLimit)
-        {
-            if (heartPoint <= 0)
-            {
-              gameFadeTimer += 1 / 60.0f;
-             if (gameFadeTimer > 1.0f) {
-             gameFadeTimer = 1.0f;
-    
-          Scene = GameScene::GameEnd_A;
+       
+    }
+    else if (heartPoint < 50)
+    {
+        gameFadeTimer += 1 / 60.0f;
+        if (gameFadeTimer > 1.0f) {
+            gameFadeTimer = 1.0f;
+            Scene = GameScene::GameEnd_B;
         }
-            }
-            else if (heartPoint<=49)
-            {
-               gameFadeTimer += 1 / 60.0f;
- if (gameFadeTimer > 1.0f) {
-     gameFadeTimer = 1.0f;
-     Scene = GameScene::GameEnd_B;
- }
-            }
-            else if (heartPoint <= 99)
-            {
-              gameFadeTimer += 1 / 60.0f;
- if (gameFadeTimer > 1.0f) {
-     gameFadeTimer = 1.0f;
-     
-     Scene = GameScene::GameEnd_C;
- }
-            }
-            else if (heartPoint >= 100)
-            {
-                Scene = GameScene::GameClear;
-            }
+       
+    }
+    else if (heartPoint <= 99)
+    {
+        gameFadeTimer += 1 / 60.0f;
+        if (gameFadeTimer > 1.0f) {
+            gameFadeTimer = 1.0f;
             
+            Scene = GameScene::GameEnd_C;
         }
+       
+    }
+    else if (heartPoint >= 100)
+    {
+        Scene = GameScene::GameClear;
+    }
+
+}
         //　バーの当たり判定（左）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
         {
@@ -923,112 +915,87 @@ if (isCollidingshotBallRadius)
     break;
     case GameClear:
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-        }
+    if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+
     }
-    break;
+   break;
     case GameEnd_A:
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            soundPlayed = false;
-            seHorror = -1;
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+   if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+break;
     }
-    break;
+  
     case GameEnd_B:
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+     if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+
     }
-    break;
+   break;
     case GameEnd_C:
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+       if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+
     }
     break;
     case GameEnd_D:
     {
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
+      if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+
     }
     break;
     case GameEnd_E:
     {
-        DxLib::SetBackgroundColor(0, 0, 0);
-        StopSoundMem(bgm);
-        polisPosition.x -= 10;
-        
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START && polisPosition.x < 0)
-            {
-                nextScene = SceneTitle;
-                StopSoundMem(polisSE);
-                if (CheckSoundMem(bgm3) == FALSE)
-                {
-                    PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-                }
-                Game_Reset();
-            }
-        
+       if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+break;
     }
-    break;
+   
     //　ゲームオーバー画面
     case GameOver:
     {
-       
-        StopSoundMem(bgm);
-        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
-        {
-           
-            nextScene = SceneTitle;
-            if (CheckSoundMem(bgm3) == FALSE)
-            {
-                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
-            }
-            Game_Reset();
-        }
-    }
-    break;
-    }
+    if (!soundPlayed)
+{
+    seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
+    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
+    soundPlayed = true;
+    Game_Reset();
+}
+break;
     
 }
 //----------------------------------------------------------------------
@@ -1257,30 +1224,7 @@ void Game_Render()
             // 玉を描画
             DxPlus::Primitive2D::DrawCircle({ 1150, 400 }, ballRadius, GetColor(0, 0, 0));
 
-           if (gameFadeTimer > 0.0f)
-   {
-       // α値を算出（0～255）
-       int alpha = (int)(255 * gameFadeTimer);
-       if (alpha > 255) alpha = 255;
-
-       // --- 描画をすべて隠す（黒フェード） ---
-       DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-       DxPlus::Primitive2D::DrawRect(
-           { 0, 0 },
-           { DxPlus::CLIENT_WIDTH, DxPlus::CLIENT_HEIGHT },
-           DxLib::GetColor(0, 0, 0)
-       );
-       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-   }
-
-   // --- 完全にフェードアウトしたら描画しない ---
-   if (gameFadeTimer >= 1.0f)
-   {
-       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-       return; // ← 全ての描画をスキップ
-   }
-    }
-    break;
+     
     
     case Game:
     {
@@ -1540,6 +1484,31 @@ void Game_Render()
 
         // 玉を描画
         DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
+
+              if (gameFadeTimer > 0.0f)
+   {
+       // α値を算出（0～255）
+       int alpha = (int)(255 * gameFadeTimer);
+       if (alpha > 255) alpha = 255;
+
+       // --- 描画をすべて隠す（黒フェード） ---
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+       DxPlus::Primitive2D::DrawRect(
+           { 0, 0 },
+           { DxPlus::CLIENT_WIDTH, DxPlus::CLIENT_HEIGHT },
+           DxLib::GetColor(0, 0, 0)
+       );
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+   }
+
+   // --- 完全にフェードアウトしたら描画しない ---
+   if (gameFadeTimer >= 1.0f)
+   {
+       DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+       return; // ← 全ての描画をスキップ
+   }
+    }
+    break;
     }
     break;
     case GameEnd_A:
@@ -1592,6 +1561,7 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
 
