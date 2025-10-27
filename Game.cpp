@@ -1,3 +1,4 @@
+
 #include "Game.h"
 #include "DxPlus/DxPlus.h"
 #include "WinMain.h"
@@ -53,7 +54,11 @@ bool CircleOBBCollision(
 static bool soundPlayed = false;
 static int seHorror = -1;
 static int timer = 0;
-static int state = 0; // 0=暗転, 1=背景表示, 2=フェードアウ
+static int state = 0; 
+
+float flashAlpha = 0.0f;   // 0.0～1.0 の範囲でアルファを制御
+bool  isFlashActive = false;
+
 //音声
 int seHit = -1;
 int seHit2 = -1;
@@ -148,7 +153,7 @@ DxPlus::Vec2 ballPosition = { 80,350 };
 DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
 //ハート
 int heartID;
-int heartPoint = 0;
+int heartPoint = 98;
 DxPlus::Vec2 HeartPosition = { 1000,300 };
 float HeartRadius = 50.0f;
 // ハートと連動する障害物
@@ -170,18 +175,18 @@ static int PointType1 = 1;
 static int PointType2 = 2;
 // タイマー
 float currentTime = 0.0f;
-float timeLimit = 60.0f; // 60秒制限
+float timeLimit = 1.0f; // 60秒制限
 // nextScene の extern 宣言
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
-
 void ChangeScene(GameScene newScene)
 {
     Scene = newScene;
     flashAlpha = 1.0f;
     isFlashActive = true;
 }
+
 
 //----------------------------------------------------------------------
 // 初期設定
@@ -233,7 +238,7 @@ void Game_Reset()
     Scene = GameScene::Gamepause;
     gameFadeTimer = 1.0f;
     currentTime = 0.0f;
-    timeLimit = 60.0f;
+    timeLimit = 1.0f;
     Heart = false;
     ballPosition = { 1150,400 };
     ballVelocity = { 0.0f, 0.0f };
@@ -246,16 +251,17 @@ void Game_Reset()
 //----------------------------------------------------------------------
 void Game_Update()
 {
- if (isFlashActive)
- {
-     flashAlpha -= 0.08f; // 減衰速度（値を小さくするとゆっくり）
+    if (isFlashActive)
+    {
+        flashAlpha -= 0.08f; // 減衰速度（値を小さくするとゆっくり）
 
-     if (flashAlpha <= 0.0f)
-     {
-         flashAlpha = 0.0f;
-         isFlashActive = false;
-     }
- }
+        if (flashAlpha <= 0.0f)
+        {
+            flashAlpha = 0.0f;
+            isFlashActive = false;
+        }
+    }
+
 
     switch (gameState)
     {
@@ -356,7 +362,7 @@ void Game_Update()
             heartPoint = 0;
             gameFadeTimer = 1.0f;
             currentTime = 0.0f;
-            timeLimit = 60.0f;
+            timeLimit = 1.0f;
             ballPosition = { 1150,400 };
             ballVelocity = { 0.0f, 0.0f };
             PlaySoundMem(bgm, DX_PLAYTYPE_LOOP, TRUE);
@@ -367,17 +373,18 @@ void Game_Update()
     //　ゲーム画面
     case Game:
     {
-		flashcounter = 0;
         currentTime += 1.0f / 60.0f;
         // エンディング
         if (heartPoint <= -50)
         {
-           ChangeScene(GameScene::GameEnd_E);
+            ChangeScene(GameScene::GameEnd_E); // ← フラッシュ付き切り替え
+
         }
         else if (heartPoint >= 200)
         {
-         ChangeScene(GameScene::GameEnd_F);
-            
+
+            ChangeScene(GameScene::GameEnd_F);
+
         }
         timeLimit -= 1.0f / 60.0f;
 
@@ -386,15 +393,23 @@ void Game_Update()
         {
             if (heartPoint <= 0)
             {
+
+
                 ChangeScene(GameScene::GameEnd_A);
+
             }
             else if (heartPoint <= 49)
             {
-              ChangeScene(GameScene::GameEnd_B);
+
+                ChangeScene(GameScene::GameEnd_B);
+
             }
             else if (heartPoint <= 99)
             {
-               ChangeScene(GameScene::GameEnd_C);
+
+
+                ChangeScene(GameScene::GameEnd_C);
+
             }
             else if (heartPoint >= 100)
             {
@@ -899,90 +914,117 @@ void Game_Update()
         }
     }
     break;
-   case GameClear:
-{
-    if (!soundPlayed)
+    case GameClear:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+        }
     }
     break;
-    Game_Reset();
-}
-case GameEnd_A:
-{
-    if (!soundPlayed)
+    case GameEnd_A:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+            soundPlayed = false;
+            seHorror = -1;
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
     }
     break;
-    Game_Reset();
-}
-break;
-case GameEnd_B:
-{
-    if (!soundPlayed)
+    case GameEnd_B:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
     }
     break;
-    Game_Reset();
-}
-case GameEnd_C:
-{
-    if (!soundPlayed)
+    case GameEnd_C:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
     }
     break;
-    Game_Reset();
-}
-case GameEnd_D: {
-    if (!soundPlayed) 
-    { seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-    DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK); 
-    soundPlayed = true; } 
-    break; 
-    Game_Reset();
-}
-case GameEnd_E:
-{
-    if (!soundPlayed)
+    case GameEnd_D:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
     }
     break;
-    Game_Reset();
-}
-//　ゲームオーバー画面
-case GameOver:
-{
-    if (!soundPlayed)
+    case GameEnd_E:
     {
-        seHorror = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-        DxLib::PlaySoundMem(seHorror, DX_PLAYTYPE_BACK);
-        soundPlayed = true;
-    }
-    break;
-    Game_Reset();
-}
+        DxLib::SetBackgroundColor(0, 0, 0);
+        StopSoundMem(bgm);
+        polisPosition.x -= 10;
 
-if (flashAlpha > 0.0f)
-{
-	int alpha = static_cast<int>(flashAlpha * 255);
-	DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-	DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(255, 255, 255), TRUE);
-	DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-}
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START && polisPosition.x < 0)
+        {
+            nextScene = SceneTitle;
+            StopSoundMem(polisSE);
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
+
+    }
+    break;
+    //　ゲームオーバー画面
+    case GameOver:
+    {
+
+        StopSoundMem(bgm);
+        if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
+        {
+
+            nextScene = SceneTitle;
+            if (CheckSoundMem(bgm3) == FALSE)
+            {
+                PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
+            }
+            Game_Reset();
+        }
+    }
+    break;
+
+   
+  
+    }
 }
 //----------------------------------------------------------------------
 // 描画処理
@@ -1501,7 +1543,7 @@ void Game_Render()
         return; // ← 全ての描画をスキップ
     }
 
-    
+
     break;
     case GameEnd_A:
     {
@@ -1543,14 +1585,14 @@ void Game_Render()
         GameText_Render();
     }
     break;
-}
-if (flashAlpha > 0.0f)
-{
-    int alpha = static_cast<int>(flashAlpha * 255);
-    DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-    DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(255, 255, 255), TRUE);
-    DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-}
+    }
+    if (flashAlpha > 0.0f)
+    {
+        int alpha = static_cast<int>(flashAlpha * 255);
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+        DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(255, 255, 255), TRUE);
+        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -1559,8 +1601,3 @@ if (flashAlpha > 0.0f)
 void Game_End()
 {
 }
-
-
-
-
-
