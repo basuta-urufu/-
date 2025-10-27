@@ -54,7 +54,7 @@ bool CircleOBBCollision(
 static bool soundPlayed = false;
 static int seHorror = -1;
 static int timer = 0;
-static int state = 0; 
+static int state = 0;
 
 float flashAlpha = 0.0f;   // 0.0～1.0 の範囲でアルファを制御
 bool  isFlashActive = false;
@@ -153,7 +153,7 @@ DxPlus::Vec2 ballPosition = { 80,350 };
 DxPlus::Vec2 ballVelocity = { 0.0f, 0.0f };
 //ハート
 int heartID;
-int heartPoint = 98;
+int heartPoint = 0;
 DxPlus::Vec2 HeartPosition = { 1000,300 };
 float HeartRadius = 50.0f;
 // ハートと連動する障害物
@@ -359,10 +359,10 @@ void Game_Update()
             Scene = GameScene::Game;
             ballHP = 2;
             gameState = 0;
-            heartPoint = 0;
+            heartPoint = -40;
             gameFadeTimer = 1.0f;
             currentTime = 0.0f;
-            timeLimit = 1.0f;
+            timeLimit = 60.0f;
             ballPosition = { 1150,400 };
             ballVelocity = { 0.0f, 0.0f };
             PlaySoundMem(bgm, DX_PLAYTYPE_LOOP, TRUE);
@@ -377,18 +377,16 @@ void Game_Update()
         // エンディング
         if (heartPoint <= -50)
         {
-            ChangeScene(GameScene::GameEnd_E); // ← フラッシュ付き切り替え
-
+            PlaySoundMem(polisSE, DX_PLAYTYPE_LOOP, TRUE);
+            Scene = GameScene::GameEnd_E;
         }
         else if (heartPoint >= 200)
         {
-
-            ChangeScene(GameScene::GameEnd_F);
-
+            Scene = GameScene::GameEnd_F;
         }
         timeLimit -= 1.0f / 60.0f;
 
-        f++;
+        
         if (0 >= timeLimit)
         {
             if (heartPoint <= 0)
@@ -413,9 +411,9 @@ void Game_Update()
             }
             else if (heartPoint >= 100)
             {
-                Scene = GameScene::GameClear;
+                ChangeScene(GameScene::GameClear);
             }
-
+            
         }
         //　バーの当たり判定（左）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
@@ -903,7 +901,7 @@ void Game_Update()
             {
                 GameText_Init();
                 DxLib::PlaySoundMem(END_SE, DX_PLAYTYPE_BACK);
-                Scene = GameScene::GameOver;
+                ChangeScene(GameScene::GameOver);;
             }
             else
             {
@@ -990,7 +988,6 @@ void Game_Update()
         DxLib::SetBackgroundColor(0, 0, 0);
         StopSoundMem(bgm);
         polisPosition.x -= 10;
-
         if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START && polisPosition.x < 0)
         {
             nextScene = SceneTitle;
@@ -1015,6 +1012,7 @@ void Game_Update()
             nextScene = SceneTitle;
             if (CheckSoundMem(bgm3) == FALSE)
             {
+                StopSoundMem(polisSE);
                 PlaySoundMem(bgm3, DX_PLAYTYPE_LOOP, TRUE);
             }
             Game_Reset();
@@ -1022,8 +1020,8 @@ void Game_Update()
     }
     break;
 
-   
-  
+
+
     }
 }
 //----------------------------------------------------------------------
@@ -1520,30 +1518,7 @@ void Game_Render()
 
         // 玉を描画
         DxPlus::Primitive2D::DrawCircle(ballPosition, ballRadius, GetColor(0, 0, 0));
-    }if (gameFadeTimer > 0.0f)
-    {
-        // α値を算出（0～255）
-        int alpha = (int)(255 * gameFadeTimer);
-        if (alpha > 255) alpha = 255;
-
-        // --- 描画をすべて隠す（黒フェード） ---
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-        DxPlus::Primitive2D::DrawRect(
-            { 0, 0 },
-            { DxPlus::CLIENT_WIDTH, DxPlus::CLIENT_HEIGHT },
-            DxLib::GetColor(0, 0, 0)
-        );
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
-
-    // --- 完全にフェードアウトしたら描画しない ---
-    if (gameFadeTimer >= 1.0f)
-    {
-        DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        return; // ← 全ての描画をスキップ
-    }
-
-
     break;
     case GameEnd_A:
     {
@@ -1600,4 +1575,3 @@ void Game_Render()
 //----------------------------------------------------------------------
 void Game_End()
 {
-}
