@@ -179,9 +179,10 @@ float gameFadeTimer;
 void ChangeScene(GameScene newScene)
 {
     Scene = newScene;
-    flashAlpha = 1.0f; // シーン切り替え時に必ずフラッシュ！
-
+    flashAlpha = 1.0f;
+    isFlashActive = true;
 }
+
 //----------------------------------------------------------------------
 // 初期設定
 //----------------------------------------------------------------------
@@ -245,12 +246,16 @@ void Game_Reset()
 //----------------------------------------------------------------------
 void Game_Update()
 {
-if (flashAlpha > 0.0f)
-{
-	flashAlpha -= 0.05f; // 20フレームくらいで消える
-	if (flashAlpha < 0.0f) flashAlpha = 0.0f;
-}
+ if (isFlashActive)
+ {
+     flashAlpha -= 0.08f; // 減衰速度（値を小さくするとゆっくり）
 
+     if (flashAlpha <= 0.0f)
+     {
+         flashAlpha = 0.0f;
+         isFlashActive = false;
+     }
+ }
 
     switch (gameState)
     {
@@ -367,20 +372,12 @@ if (flashAlpha > 0.0f)
         // エンディング
         if (heartPoint <= -50)
         {
-            gameFadeTimer += 1 / 60.0f;
-            if (gameFadeTimer > 1.0f) {
-                gameFadeTimer = 1.0f;
-
-                Scene = GameScene::GameEnd_E;
-            }
+           ChangeScene(GameScene::GameEnd_E);
         }
         else if (heartPoint >= 200)
         {
-            gameFadeTimer += 1 / 60.0f;
-            if (gameFadeTimer > 1.0f) {
-                gameFadeTimer = 1.0f;
-                Scene = GameScene::GameEnd_F;
-            }
+         ChangeScene(GameScene::GameEnd_F);
+            
         }
         timeLimit -= 1.0f / 60.0f;
 
@@ -389,29 +386,15 @@ if (flashAlpha > 0.0f)
         {
             if (heartPoint <= 0)
             {
-                gameFadeTimer += 1 / 60.0f;
-                if (gameFadeTimer > 1.0f) {
-                    gameFadeTimer = 1.0f;
-
-                    Scene = GameScene::GameEnd_A;
-                }
+                ChangeScene(GameScene::GameEnd_A);
             }
             else if (heartPoint <= 49)
             {
-                gameFadeTimer += 1 / 60.0f;
-                if (gameFadeTimer > 1.0f) {
-                    gameFadeTimer = 1.0f;
-                    Scene = GameScene::GameEnd_B;
-                }
+              ChangeScene(GameScene::GameEnd_B);
             }
             else if (heartPoint <= 99)
             {
-                gameFadeTimer += 1 / 60.0f;
-                if (gameFadeTimer > 1.0f) {
-                    gameFadeTimer = 1.0f;
-
-                    Scene = GameScene::GameEnd_C;
-                }
+               ChangeScene(GameScene::GameEnd_C);
             }
             else if (heartPoint >= 100)
             {
@@ -1561,7 +1544,13 @@ void Game_Render()
     }
     break;
 }
-
+if (flashAlpha > 0.0f)
+{
+    int alpha = static_cast<int>(flashAlpha * 255);
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+    DxLib::DrawBox(0, 0, 1280, 720, DxLib::GetColor(255, 255, 255), TRUE);
+    DxLib::SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
 }
 
 //----------------------------------------------------------------------
@@ -1570,6 +1559,7 @@ void Game_Render()
 void Game_End()
 {
 }
+
 
 
 
