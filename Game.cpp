@@ -203,11 +203,12 @@ void Game_Init()
     EndIDs[5] = DxPlus::Sprite::Load(L"./Data/Images/Character_JiraichanGameEnd149_Image.png");
     heartID = DxPlus::Sprite::Load(L"./Data/Images/heart.png");
     girlPointID = DxPlus::Sprite::Load(L"./Data/Images/Character_Jiraichan1_2_Normal.png");
-    gimikkuIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/¥boundbou.png");
-    gimikkuIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/¥Changebotann_on.png");
-    gimikkuIDs[2] = DxPlus::Sprite::Load(L"./Data/Images/¥Changebotann_off.png");
+    gimikkuIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/UI_Bandage.png");
+    gimikkuIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/UI_On.png");
+    gimikkuIDs[2] = DxPlus::Sprite::Load(L"./Data/Images/UI_Off.png");
     gimikkuIDs[3] = DxPlus::Sprite::Load(L"./Data/Images/hukitobasi.png");
-    gimikkuIDs[4] = DxPlus::Sprite::Load(L"./Data/Images/Changebotann_point.png");
+    gimikkuIDs[4] = DxPlus::Sprite::Load(L"./Data/Images/Changebotann_point.jpg");
+    gimikkuIDs[5] = DxPlus::Sprite::Load(L"./Data/Images/boundbou.png");
     backID = DxPlus::Sprite::Load(L"./Data/Images/toriaezuhaikei.png");
     sloopID = DxPlus::Sprite::Load(L"./Data/Images/sloop.png");
     sloop2ID = DxPlus::Sprite::Load(L"./Data/Images/sloop2.png");
@@ -386,7 +387,7 @@ void Game_Update()
         }
         timeLimit -= 1.0f / 60.0f;
 
-        
+
         if (0 >= timeLimit)
         {
             if (heartPoint <= 0)
@@ -413,7 +414,7 @@ void Game_Update()
             {
                 ChangeScene(GameScene::GameClear);
             }
-            
+
         }
         //　バーの当たり判定（左）
         if (CircleOBBCollision(ballPosition, ballRadius, bouCenter, bouWidth, bouHeight, angle, normal, penetration))
@@ -1043,10 +1044,9 @@ void Game_Render()
     {
         DxPlus::Sprite::Draw(backID, { 0,0 });
 
-        for (int i = 0;i <= 1;i++)
-        {
-            DxPlus::Sprite::Draw(gimikkuIDs[0], { 300.0f + i * 800,500.0f + i * 30 }, { 0.6,0.6 }, { 640,320 }, DxPlus::Deg2Rad * 15.0f + i * 15);
-        }
+        DxPlus::Sprite::Draw(gimikkuIDs[5], { 280.0f + 20,470.0f + 30 }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 12.5f + 12.5);
+        DxPlus::Sprite::Draw(gimikkuIDs[5], { 300.0f + 700,450.0f + 30 }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 12.0f + 12.0);
+
         DxPlus::Sprite::Draw(gimikkuIDs[3], { 0,0 });
         // 棒を描画（中心を基準に回転）
         DxPlus::Vec2 bouTopLeft = {
@@ -1164,11 +1164,11 @@ void Game_Render()
 
 
         //円の周りの斜めの棒
-        for (int i = 0;i <= 1;i++)
-        {
-            DxPlus::Sprite::Draw(gimikkuIDs[0], { 520.0f + i * 200,90.0f }, { 0.7,0.7 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + i * 17.15f);
+       
+        DxPlus::Sprite::Draw(gimikkuIDs[0], { 600.0f + 200,90.0f + 90.0f }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + 17.15f);
+        DxPlus::Sprite::Draw(gimikkuIDs[0], { 310.0f + 200,220.0f + 90.0f }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + 17.15f);
 
-        }
+        
         DxPlus::Primitive2D::DrawRect(
             { objectPosition.x + 550 ,objectPosition.y - 190 },
             { objectWidth, objectHeight }, GetColor(0, 80, 0),
@@ -1232,8 +1232,8 @@ void Game_Render()
             DxPlus::Primitive2D::DrawCircle(PointPosition2, PointRadius, GetColor(0, 0, 0));
         }
         DxPlus::Primitive2D::DrawCircle(HeartPosition, HeartRadius, GetColor(0, 255, 0));
-        DxPlus::Sprite::Draw(gimikkuIDs[2], { 930,200 }, { 0.5,0.5 });
-        DxPlus::Sprite::Draw(gimikkuIDs[4], { 520,30 }, { 0.5,0.5 });
+        DxPlus::Sprite::Draw(gimikkuIDs[2], { 930,230 }, { 0.09,0.09 });
+        DxPlus::Sprite::Draw(gimikkuIDs[4], { 320,30 }, { 0.5,0.5 });
         DxPlus::Primitive2D::DrawCircle({ HeartObjectPosition.x,HeartObjectPosition.y }, HeartRadius, GetColor(0, 0, 0));
         // 時間の描画
         std::wstring Time = std::to_wstring(timeLimit) + L"";
@@ -1261,10 +1261,9 @@ void Game_Render()
     {
         DxPlus::Sprite::Draw(backID, { 0,0 });
 
-        for (int i = 0;i <= 1;i++)
-        {
-            DxPlus::Sprite::Draw(gimikkuIDs[0], { 300.0f + i * 800,500.0f + i * 30 }, { 0.6,0.6 }, { 640,320 }, DxPlus::Deg2Rad * 15.0f + i * 15);
-        }
+        DxPlus::Sprite::Draw(gimikkuIDs[5], { 280.0f + 20,470.0f + 30 }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 12.5f + 12.5);
+        DxPlus::Sprite::Draw(gimikkuIDs[5], { 300.0f + 700,450.0f + 30 }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 12.0f + 12.0);
+        
         DxPlus::Sprite::Draw(gimikkuIDs[3], { 0,0 });
         // 棒を描画（中心を基準に回転）
         DxPlus::Vec2 bouTopLeft = {
@@ -1391,11 +1390,10 @@ void Game_Render()
 
 
         //円の周りの斜めの棒
-        for (int i = 0;i <= 1;i++)
-        {
-            DxPlus::Sprite::Draw(gimikkuIDs[0], { 520.0f + i * 200,90.0f }, { 0.7,0.7 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + i * 17.15f);
-
-        }
+       
+        
+        DxPlus::Sprite::Draw(gimikkuIDs[0], { 600.0f + 200,90.0f + 90.0f }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + 17.15f);
+        DxPlus::Sprite::Draw(gimikkuIDs[0], { 310.0f + 200,220.0f + 90.0f }, { 0.2,0.2 }, { 640,320 }, DxPlus::Deg2Rad * 48.0f + 17.15f);
 
 
         DxPlus::Primitive2D::DrawRect(
@@ -1462,14 +1460,14 @@ void Game_Render()
         DxPlus::Primitive2D::DrawCircle(HeartPosition, HeartRadius, GetColor(0, 255, 0));
         if (Heart)
         {
-            DxPlus::Sprite::Draw(gimikkuIDs[1], { 930,230 }, { 0.5,0.5 });
-            DxPlus::Sprite::Draw(gimikkuIDs[4], { 520,30 }, { 0.5,0.5 });
+            DxPlus::Sprite::Draw(gimikkuIDs[1], { 930,230 }, { 0.09,0.09 });
+            DxPlus::Sprite::Draw(gimikkuIDs[4], { 320,30 }, { 0.5,0.5 });
             DxPlus::Primitive2D::DrawCircle({ HeartObjectPosition.x,HeartObjectPosition.y }, HeartRadius, GetColor(255, 0, 0));
         }
         else
         {
-            DxPlus::Sprite::Draw(gimikkuIDs[2], { 930,200 }, { 0.5,0.5 });
-            DxPlus::Sprite::Draw(gimikkuIDs[4], { 520,30 }, { 0.5,0.5 });
+            DxPlus::Sprite::Draw(gimikkuIDs[2], { 930,230 }, { 0.09,0.09 });
+            DxPlus::Sprite::Draw(gimikkuIDs[4], { 320,30 }, { 0.5,0.5 });
             DxPlus::Primitive2D::DrawCircle({ HeartObjectPosition.x,HeartObjectPosition.y }, HeartRadius, GetColor(0, 0, 0));
 
         }
@@ -1575,3 +1573,5 @@ void Game_Render()
 //----------------------------------------------------------------------
 void Game_End()
 {
+}
+
