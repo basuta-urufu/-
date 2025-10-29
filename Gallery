@@ -1,0 +1,190 @@
+#include "Gallery.h"
+#include "WinMain.h"
+#include"Title.h"
+#include"DxPlus/DxPlus.h"
+#include"Game.h"
+//----------------------------------------------------
+//変数
+//----------------------------------------------------
+
+extern int nextScene;
+extern int titleState;
+extern int GalleryPoint_A;
+extern int GalleryPoint_B;
+extern int GalleryPoint_C;
+
+int GalleryPosX = 0;
+int GalleryPosY = 0;
+//画像
+int GalleryIDs[9];
+enum GalleryScene {
+	Gallery,
+	END_A,
+	END_B,
+	END_C
+};
+GalleryScene Scene_Gallery = Gallery;
+extern int logoIDs[4];
+extern int EndIDs[6];
+void Gallery_Init()
+{
+	DxLib::SetBackgroundColor(0, 0, 0);
+	GalleryIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_back.png");
+	GalleryIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_5.png");
+	GalleryIDs[2] = DxPlus::Sprite::Load(L"./Data/Images/Gallery.png");
+	GalleryIDs[3] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_8.png");
+	GalleryIDs[4] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_2.png");
+	GalleryIDs[5] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_7.png");
+	GalleryIDs[6] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_3.png");
+	GalleryIDs[7] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_6.png");
+	GalleryIDs[8] = DxPlus::Sprite::Load(L"./Data/Images/Gallery_4.png");
+	logoIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/UI_GameClear.png");
+	logoIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/UI_End.png");
+	EndIDs[3] = DxPlus::Sprite::Load(L"./Data/Images/Character_JiraichanGameEnd5099_Image.png");
+	EndIDs[4] = DxPlus::Sprite::Load(L"./Data/Images/Jiraichan_GameClear_Rough.png");
+	EndIDs[5] = DxPlus::Sprite::Load(L"./Data/Images/Character_JiraichanGameEnd149_Image.png");
+
+
+}
+
+void Gallery_Reset()
+{
+	Scene_Gallery = Gallery;
+}
+
+void Gallery_Update()
+{
+	switch(Scene_Gallery)
+	{
+		
+
+	case Gallery:
+	{
+		int Input = (DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1));
+		if (Input & DxPlus::Input::BUTTON_RIGHT)
+		{
+			GalleryPosX++;
+		}
+		if (Input & DxPlus::Input::BUTTON_LEFT)
+		{
+			GalleryPosX--;
+		}
+		if (GalleryPosX >= 3)
+		{
+			GalleryPosX = 3;
+		}
+		if (GalleryPosX <= 0)
+		{
+			GalleryPosX = 0;
+		}
+		if (Input & DxPlus::Input::BUTTON_START && GalleryPosX == 0)
+		{
+			nextScene = SceneTitle;
+		}
+		if (Input & DxPlus::Input::BUTTON_START && GalleryPosX == 1 && GalleryPoint_C == 1)
+		{
+			Scene_Gallery = GalleryScene::END_C;
+		}
+		if (Input & DxPlus::Input::BUTTON_START && GalleryPosX == 2 && GalleryPoint_B == 1)
+		{
+			Scene_Gallery = GalleryScene::END_B;
+		}
+		if (Input & DxPlus::Input::BUTTON_START && GalleryPosX == 3 && GalleryPoint_A == 1)
+		{
+			Scene_Gallery = GalleryScene::END_A;
+		}
+	}
+	break;
+	case END_A:
+	{
+		int Input = (DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1));
+		if (Input & DxPlus::Input::BUTTON_START)
+		{
+			Scene_Gallery = GalleryScene::Gallery; 
+		}
+	}
+	break;
+	case END_B:
+	{
+		int Input = (DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1));
+		if (Input & DxPlus::Input::BUTTON_START)
+		{
+			Scene_Gallery = GalleryScene::Gallery;
+		}
+	}
+	break;
+	case END_C:
+	{
+		int Input = (DxPlus::Input::GetButtonDown(DxPlus::Input::PLAYER1));
+		if (Input & DxPlus::Input::BUTTON_START)
+		{
+			Scene_Gallery = GalleryScene::Gallery;
+		}
+	}
+	break;
+	}
+
+}
+
+void Gallery_Render()
+{
+	switch (Scene_Gallery)
+	{
+	case Gallery:
+	{
+		DxPlus::Sprite::Draw(GalleryIDs[0]);
+		DxPlus::Sprite::Draw(GalleryIDs[7]);
+		DxPlus::Sprite::Draw(GalleryIDs[1]);
+		DxPlus::Sprite::Draw(GalleryIDs[3]);
+		DxPlus::Sprite::Draw(GalleryIDs[5]);
+
+		if (GalleryPosX == 0)
+		{
+			DxPlus::Sprite::Draw(GalleryIDs[8]);
+		}
+
+		if (GalleryPosX == 1)
+		{
+			DxPlus::Sprite::Draw(GalleryIDs[6]);
+		}
+		if (GalleryPosX == 2)
+		{
+
+			DxPlus::Sprite::Draw(GalleryIDs[2]);
+		}
+		if (GalleryPosX == 3)
+		{
+			DxPlus::Sprite::Draw(GalleryIDs[4]);
+
+		}
+
+	}
+	break;
+	case END_A:
+	{
+		DxPlus::Sprite::Draw(EndIDs[5]);
+		DxPlus::Sprite::Draw(logoIDs[1], { 360,5 }, { 0.45,0.45 });
+	}
+	break;
+	case END_B:
+	{
+		DxPlus::Sprite::Draw(EndIDs[3]);
+	}
+	break;
+	case END_C:
+	{
+		DxPlus::Sprite::Draw(EndIDs[4]);
+		DxPlus::Sprite::Draw(logoIDs[0], { 450,40 }, { 0.38,0.38 });
+	}
+	break;
+	}
+	
+	
+		
+	
+
+}
+
+void Gallery_End()
+{
+}
