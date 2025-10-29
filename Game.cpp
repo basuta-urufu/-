@@ -1,3 +1,4 @@
+
 #include "Game.h"
 #include "DxPlus/DxPlus.h"
 #include "WinMain.h"
@@ -68,7 +69,8 @@ extern const wchar_t messageLines[MESSAGE_MAX][256] = {
     "\n\n-Push Enter Key-",
     L"いきなり君に声をかけられたときは驚いたけど、意外に良い人なんだね\n"
     "\n\n-Push Enter Key-",
-    L"また君が良ければ、一緒に遊んでくれないかな？"    
+    L"また君が良ければ、一緒に遊んでくれないかな？\n"    
+    "\n\n-Push Enter Key-",
 };
 //音声
 int seHit = -1;
@@ -96,7 +98,7 @@ enum GameScene {
 GameScene Scene = Gamepause;
 //背景・画像
 extern int knojoID;
-int logoIDs[2];
+int logoIDs[3];
 int gimikkuIDs[12];
 int backIDs[5];
 int girlPointID;
@@ -187,6 +189,11 @@ DxPlus::Vec2 PointPosition = { 1050,100 };
 DxPlus::Vec2 PointPosition2 = { 400,100 };
 static int PointType1 = 1;
 static int PointType2 = 2;
+static int PointType3 = 3;
+//ギャラリー
+ int GalleryPoint_A;
+ int GalleryPoint_B;
+ int GalleryPoint_C;
 // タイマー
 float currentTime = 0.0f;
 float timeLimit = 1.0f; // 60秒制限
@@ -194,16 +201,12 @@ float timeLimit = 1.0f; // 60秒制限
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
-void ChangeScene(GameScene newScene = Scene, bool flashOnly = false)
+void ChangeScene(GameScene newScene)
 {
-    if (!flashOnly)
-        Scene = newScene;
-
+    Scene = newScene;
     flashAlpha = 1.0f;
     isFlashActive = true;
 }
-static bool hasChangedScene = false;
-
 
 
 //----------------------------------------------------------------------
@@ -215,6 +218,7 @@ void Game_Init()
     Scene = GameScene::Gamepause;
     logoIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/UI_GameClear.png");
     logoIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/UI_End.png");
+    logoIDs[2] = DxPlus::Sprite::Load(L"./Data/Images/loog.png");
     EndIDs[3] = DxPlus::Sprite::Load(L"./Data/Images/Character_JiraichanGameEnd5099_Image.png");
     EndIDs[4] = DxPlus::Sprite::Load(L"./Data/Images/Jiraichan_GameClear_Rough.png");
     EndIDs[5] = DxPlus::Sprite::Load(L"./Data/Images/Character_JiraichanGameEnd149_Image.png");
@@ -232,6 +236,7 @@ void Game_Init()
     gimikkuIDs[8] = DxPlus::Sprite::Load(L"./Data/Images/UI_Outlet_IN.png");
     gimikkuIDs[9] = DxPlus::Sprite::Load(L"./Data/Images/UI_Outlet_OUT.png");
     gimikkuIDs[10] = DxPlus::Sprite::Load(L"./Data/Images/UI_Bandage.png");
+    gimikkuIDs[11] = DxPlus::Sprite::Load(L"./Data/Images/dodai.png");
     backIDs[0] = DxPlus::Sprite::Load(L"./Data/Images/toriaezuhaikei.png");
     backIDs[1] = DxPlus::Sprite::Load(L"./Data/Images/Background_Pingball.png");
     backIDs[2] = DxPlus::Sprite::Load(L"./Data/Images/End_back.png");
@@ -241,7 +246,7 @@ void Game_Init()
     seHit = DxLib::LoadSoundMem(L"./Data/Sounds/gakon.mp3");
     seHit2 = DxLib::LoadSoundMem(L"./Data/Sounds/PlayerShot.wav");
     END_SE = DxLib::LoadSoundMem(L"./Data/Sounds/ショック1.mp3");
-    END_SE2;
+    END_SE2= DxLib::LoadSoundMem(L"./Data/Sounds/キラッ2.mp3");
     polisSE = DxLib::LoadSoundMem(L"./Data/Sounds/Police_Car-Siren03-01(Close).mp3");
     //seHit3= DxLib::LoadSoundMem(L"./Data/Sounds/");
     bgm = LoadSoundMem(L"./Data/Sounds/heal_me.wav");
@@ -317,17 +322,7 @@ void Game_Update()
         }
         break;
     }
- if (!hasChangedScene && heartPoint >= 100)
- {
-     ChangeScene(Scene, true);
-     hasChangedScene = true;  
 
- 
- }
- else if (hasChangedScene && heartPoint < 100)
- {
-     hasChangedScene = false;  // heartPointが下がったら再び許可
- }
     // --- 玉の更新 ---
     ballVelocity.y += GRAVITY;
     ballPosition.x += ballVelocity.x;
@@ -395,7 +390,7 @@ void Game_Update()
             Scene = GameScene::Game;
             ballHP = 2;
             gameState = 0;
-            heartPoint = 90;
+            heartPoint = 0;
             gameFadeTimer = 1.0f;
             currentTime = 0.0f;
             timeLimit = 60.0f;
@@ -419,6 +414,7 @@ void Game_Update()
         }
         else if (heartPoint >= 200)
         {
+            GameText_Init();
             Scene = GameScene::GameEnd_F;
         }
         timeLimit -= 1.0f / 60.0f;
@@ -429,20 +425,21 @@ void Game_Update()
             if (heartPoint <50)
             {
 
-
+                GalleryPoint_A = 1;
                 ChangeScene(GameScene::GameEnd_A);
 
             }
             else if (heartPoint <= 99)
             {
 
-
+                GalleryPoint_B = 1;
                 ChangeScene(GameScene::GameEnd_C);
 
             }
             else if (heartPoint >= 100)
             {
                 GameText_Init();
+                GalleryPoint_C = 1;
                 ChangeScene(GameScene::GameClear_Text);
             }
             
@@ -715,31 +712,6 @@ void Game_Update()
                 ballVelocity = ballVelocity - wallNormal * (2 * vn);
             }
         }
-        // ---反射しない障害物---
-        DxPlus::Vec2 Objectdelta = { ballPosition.x - ObjectPosition.x, ballPosition.y - ObjectPosition.y };
-        float Objectdist = Objectdelta.x * Objectdelta.x + Objectdelta.y * Objectdelta.y;
-        float ObjectradiusSum = ballRadius + ObjectRadius;
-        bool isCollidingObject = (Objectdist <= ObjectradiusSum * ObjectradiusSum);
-        if (isCollidingObject)
-        {
-            float dist = sqrt(Objectdist);
-            if (dist == 0.0f) {
-                Objectdelta = { 0.0f, -1.0f };
-                dist = 1.0f;
-            }
-            DxPlus::Vec2 normal = { Objectdelta.x / dist, Objectdelta.y / dist };
-            // めり込み解消
-            float Objectpenetration = ObjectradiusSum - dist;
-            ballPosition = ballPosition + normal * Objectpenetration;
-            float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
-            if (vn < 0.0f)
-            {
-                ballPosition += wallNormal * wallPenetration;
-                ballVelocity = ballVelocity - normal * (vn);
-
-            }
-        }
-
         // --- ハート ---
         DxPlus::Vec2 delta = { ballPosition.x - HeartPosition.x, ballPosition.y - HeartPosition.y };
         float dist = delta.x * delta.x + delta.y * delta.y;
@@ -808,6 +780,7 @@ void Game_Update()
         // フレーム間で当たっていたかを記録
         static bool wasCollidingHeart1 = false;
         static bool wasCollidingHeart2 = false;
+        static bool wasCollidingHeart3 = false;
         // --- ポイント ---
         DxPlus::Vec2 Pointdelta = { ballPosition.x - PointPosition.x, ballPosition.y - PointPosition.y };
         float dist2 = Pointdelta.x * Pointdelta.x + Pointdelta.y * Pointdelta.y;
@@ -839,6 +812,7 @@ void Game_Update()
 
                     PointType1 = rand() % 2 + 1;
                     PointType2 = rand() % 2 + 1;// 次の色にランダム変更
+                    PointType3 = rand() % 2 + 1;
                 }
             }
         }
@@ -872,10 +846,45 @@ void Game_Update()
 
                     PointType2 = rand() % 2 + 1;
                     PointType1 = rand() % 2 + 1;
+                    PointType3 = rand() % 2 + 1;
                 }
             }
         }
         wasCollidingHeart2 = isCollidingPoint2;
+        DxPlus::Vec2 Objectdelta = { ballPosition.x - ObjectPosition.x, ballPosition.y - ObjectPosition.y };
+        float Objectdist = Objectdelta.x * Objectdelta.x + Objectdelta.y * Objectdelta.y;
+        float ObjectradiusSum = ballRadius + ObjectRadius;
+        bool isCollidingObject = (Objectdist <= ObjectradiusSum * ObjectradiusSum);
+        if (isCollidingObject)
+        {
+            float dist = sqrt(Objectdist);
+            if (dist == 0.0f) {
+                Objectdelta = { 0.0f, -1.0f };
+                dist = 1.0f;
+            }
+            DxPlus::Vec2 normal = { Objectdelta.x / dist, Objectdelta.y / dist };
+            // めり込み解消
+            float Objectpenetration = ObjectradiusSum - dist;
+            ballPosition = ballPosition + normal * Objectpenetration;
+            float vn = ballVelocity.x * normal.x + ballVelocity.y * normal.y;
+            if (vn < 0.0f)
+            {
+                ballPosition += wallNormal * wallPenetration;
+                ballVelocity = ballVelocity - normal * (1.5*vn);
+                if (!wasCollidingHeart3)
+                {
+                    if (PointType3 == 1)
+                        heartPoint += 20;
+                    else
+                        heartPoint -= 10;
+
+                    PointType3 = rand() % 2 + 1;
+                    PointType2 = rand() % 2 + 1;
+                    PointType1 = rand() % 2 + 1;
+                }
+            }
+        }
+        wasCollidingHeart3 = isCollidingObject;
         // ボールを打ち出す障害物
         DxPlus::Vec2 shotBalldelta = { ballPosition.x - shotBallPosition.x, ballPosition.y - shotBallPosition.y };
         float shotBalldist = shotBalldelta.x * shotBalldelta.x + shotBalldelta.y * shotBalldelta.y;
@@ -906,7 +915,7 @@ void Game_Update()
             ballHP -= 1;
             if (ballHP < 0)
             {
-                GameText_Init();
+                
                 DxLib::PlaySoundMem(END_SE, DX_PLAYTYPE_BACK);
                 ChangeScene(GameScene::GameOver);;
             }
@@ -933,6 +942,7 @@ void Game_Update()
             }
             else
             {
+                DxLib::PlaySoundMem(END_SE2, DX_PLAYTYPE_BACK);
                 Scene = GameClear;
             }
 
@@ -1016,10 +1026,15 @@ void Game_Update()
 
     }
     break;
+    case GameEnd_F:
+    {
+        StopSoundMem(bgm);
+    }
+    break;
     //　ゲームオーバー画面
     case GameOver:
     {
-
+        GalleryPoint_A = 1;
         StopSoundMem(bgm);
         if (DxPlus::Input::GetButton(DxPlus::Input::PLAYER1) & DxPlus::Input::BUTTON_START)
         {
@@ -1063,7 +1078,6 @@ void Game_Render()
         }
         DxPlus::Sprite::Draw(gimikkuIDs[2], { 950,240 }, { 0.45,0.5 });
         DxPlus::Sprite::Draw(gimikkuIDs[0], { 220.0f ,320.0f }, { 0.6,0.6 }, { 640,320 }, DxPlus::Deg2Rad - 3.63f);
-       
         //斜めの棒
         DxPlus::Primitive2D::DrawRect(
             slopeCenter,
@@ -1106,6 +1120,7 @@ void Game_Render()
             { wallWidth3 * 0.5f, wallHeight3 * 0.5f },
             wallAngle3
         );
+        DxPlus::Sprite::Draw(gimikkuIDs[11]);
         //スロープ
         DxPlus::Sprite::Draw(sloopID, { 775 , 685 }, { 0.5f, 0.5f }, { 228, 108 }, 0.15);
         DxPlus::Sprite::Draw(sloop2ID, { 500, 632 }, { 0.5f, 0.5f }, { 1, 1 }, -0.15);
@@ -1135,8 +1150,6 @@ void Game_Render()
         }
         //円の周りの棒
         DxPlus::Sprite::Draw(gimikkuIDs[2], { 950,230 }, { 0.45,0.55 });
-        //反射しない障害物
-        DxPlus::Primitive2D::DrawCircle(ObjectPosition, ObjectRadius, GetColor(255, 255, 255));
         // ボールを飛ばすギミック
         DxPlus::Primitive2D::DrawCircle(shotBallPosition, shotBallRadius, GetColor(0, 0, 255));
         // 得点
@@ -1157,6 +1170,14 @@ void Game_Render()
         {
             DxPlus::Sprite::Draw(gimikkuIDs[6], { 360,65 },{0.1,0.1});
         }
+        if (PointType3 == 1)
+        {
+            DxPlus::Sprite::Draw(gimikkuIDs[7], { 610,280 }, { 0.05,0.05 });
+        }
+        else
+        {
+            DxPlus::Sprite::Draw(gimikkuIDs[6], { 610,280 }, { 0.05,0.05});
+        }
         DxPlus::Sprite::Draw(gimikkuIDs[8], { 0,50 }, { 0.5,0.5 });
         DxPlus::Sprite::Draw(gimikkuIDs[9], { 5,400 }, { 0.8,0.8 });
         DxPlus::Sprite::Draw(gimikkuIDs[5], { 550,30 }, { 0.5,0.5 });
@@ -1169,12 +1190,13 @@ void Game_Render()
         DxPlus::Sprite::Draw(girlPointID, girlPointPosition, girlPointScale);
         DxPlus::Sprite::Draw(heartID, { 920,580 });
         std::wstring scoreText = std::to_wstring(heartPoint) + L"%";
-        DxPlus::Text::DrawString(scoreText.c_str(), 970, 650, GetColor(255, 255, 255));
+        DxPlus::Text::DrawString(scoreText.c_str(), 970, 650, GetColor(0, 0, 0));
         // 残り残機
         std::wstring HP = L"あと" + std::to_wstring(ballHP) + L"機";
-        DxPlus::Text::DrawString(HP.c_str(), 200, 680, GetColor(255, 255, 255));
+        DxPlus::Text::DrawString(HP.c_str(), 200, 680, GetColor(0, 0, 0));
         // 玉を描画
         DxPlus::Primitive2D::DrawCircle({ 1150, 400 }, ballRadius, GetColor(0, 0, 0));
+        DxPlus::Text::DrawString(L"エンターを押してスタート", 500, 330, GetColor(0, 0, 0));
         
 
         
@@ -1292,9 +1314,6 @@ void Game_Render()
         {
             DxPlus::Sprite::Draw(gimikkuIDs[10], { 495.0f + i * 255 ,105.0f }, { 0.7,0.7 }, { 150,18 }, DxPlus::Deg2Rad + 0.84 + i * -1.7);
         }
-
-        //反射しない障害物
-        DxPlus::Primitive2D::DrawCircle(ObjectPosition, ObjectRadius, GetColor(255, 255, 255));
         // ボール
         DxPlus::Primitive2D::DrawCircle(shotBallPosition, shotBallRadius, GetColor(0, 0, 255));
         // 得点
@@ -1315,6 +1334,14 @@ void Game_Render()
         {
             DxPlus::Sprite::Draw(gimikkuIDs[6], { 360,65 }, { 0.1,0.1 });
         }
+        if (PointType3 == 1)
+        {
+            DxPlus::Sprite::Draw(gimikkuIDs[7], { 610,280 }, { 0.05,0.05 });
+        }
+        else
+        {
+            DxPlus::Sprite::Draw(gimikkuIDs[6], { 610,280 }, { 0.05,0.05 });
+        }
         if (Heart)
         {
             DxPlus::Sprite::Draw(gimikkuIDs[1], { 950,230 }, { 0.45,0.55 });
@@ -1329,7 +1356,7 @@ void Game_Render()
         DxPlus::Sprite::Draw(gimikkuIDs[9], { 5,400 }, { 0.8,0.8 });
         // 時間の描画
         std::wstring Time = std::to_wstring(timeLimit) + L"";
-        DxPlus::Text::DrawString(Time.c_str(), 200, 650, GetColor(255, 255, 255));
+        DxPlus::Text::DrawString(Time.c_str(), 200, 650, GetColor(0, 0, 0));
         // 得点の描画
         DxPlus::Vec2 girlPointPosition = { 1100,530 };
         DxPlus::Vec2 girlPointScale = { 0.4,0.4 };
@@ -1350,16 +1377,13 @@ void Game_Render()
     {
         DxPlus::Sprite::Draw(EndIDs[5]);
         DxPlus::Sprite::Draw(logoIDs[1], { 360,5 }, { 0.45,0.45 });
+        DxPlus::Sprite::Draw(logoIDs[2], { 800,450 }, { 0.8,0.8 });
     }
     break;
     case GameEnd_C:
     {
         DxPlus::Sprite::Draw(EndIDs[3]);
-    }
-    break;
-    case GameEnd_D:
-    {
-        DxPlus::Sprite::Draw(EndIDs[0]);
+        DxPlus::Sprite::Draw(logoIDs[2], { 800,450 }, { 0.8,0.8 });
     }
     break;
     case GameClear_Text:
@@ -1371,6 +1395,7 @@ void Game_Render()
     {
         DxPlus::Sprite::Draw(EndIDs[4]);
         DxPlus::Sprite::Draw(logoIDs[0],{450,40},{0.38,0.38});
+        DxPlus::Sprite::Draw(logoIDs[2], { 800,450 }, { 0.8,0.8 });
     }
     break;
     case GameEnd_E:
@@ -1380,14 +1405,21 @@ void Game_Render()
         {
             DxPlus::Sprite::Draw(EndIDs[5]);
             DxPlus::Sprite::Draw(logoIDs[1], { 360,5 }, { 0.45,0.45 });
+            DxPlus::Sprite::Draw(logoIDs[2], { 800,450 }, { 0.8,0.8 });
         }
+    }
+    break;
+    case GameEnd_F:
+    {
+        DxLib::SetBackgroundColor(0, 0, 0);
+        GameText_END_Render();
     }
     break;
     case GameOver:
     {
         DxPlus::Sprite::Draw(EndIDs[5]);
         DxPlus::Sprite::Draw(logoIDs[1],{ 360,5 }, { 0.45,0.45 });
-        GameText_END_Render();
+        DxPlus::Sprite::Draw(logoIDs[2], { 800,450}, { 0.8,0.8 });
     }
     break;
     }
@@ -1405,4 +1437,4 @@ void Game_Render()
 //----------------------------------------------------------------------
 void Game_End()
 {
-
+}
