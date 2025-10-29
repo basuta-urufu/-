@@ -194,12 +194,16 @@ float timeLimit = 1.0f; // 60秒制限
 extern int nextScene;
 int gameState;
 float gameFadeTimer;
-void ChangeScene(GameScene newScene)
+void ChangeScene(GameScene newScene = Scene, bool flashOnly = false)
 {
-    Scene = newScene;
+    if (!flashOnly)
+        Scene = newScene;
+
     flashAlpha = 1.0f;
     isFlashActive = true;
 }
+static bool hasChangedScene = false;
+
 
 
 //----------------------------------------------------------------------
@@ -313,7 +317,17 @@ void Game_Update()
         }
         break;
     }
+ if (!hasChangedScene && heartPoint >= 100)
+ {
+     ChangeScene(Scene, true);
+     hasChangedScene = true;  
 
+ 
+ }
+ else if (hasChangedScene && heartPoint < 100)
+ {
+     hasChangedScene = false;  // heartPointが下がったら再び許可
+ }
     // --- 玉の更新 ---
     ballVelocity.y += GRAVITY;
     ballPosition.x += ballVelocity.x;
@@ -1391,3 +1405,4 @@ void Game_Render()
 //----------------------------------------------------------------------
 void Game_End()
 {
+
